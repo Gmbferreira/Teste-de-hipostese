@@ -1,4 +1,4 @@
-"""Roda o dashboard sem navegador e confere a seção 3 (issue #13)."""
+"""Roda o dashboard sem navegador e confere as seções 3 e 4 (issues #13 e #19)."""
 
 from __future__ import annotations
 
@@ -44,3 +44,21 @@ def test_secao_3_tem_texto_tabela_e_interpretacao() -> None:
     assert f"p = {p_valor(exemplo.welch.p_valor)}" in textos
     assert len(app.dataframe) >= 1
     assert any(e.label == "Interpretação completa do exemplo" for e in app.expander)
+
+
+def test_secao_4_mostra_o_erro_tipo_i_e_troca_o_alpha() -> None:
+    """Seção 4 (issue #19): texto, tabela e o seletor de α."""
+    from src.grafico_g3 import dados_g3
+    from src.textos import texto_erro_tipo_i
+
+    app = _rodar()
+    textos = [m.value for m in app.markdown]
+    assert texto_erro_tipo_i(dados_g3(alpha=0.05)) in textos
+    assert any(e.label == "Como cada situação foi simulada" for e in app.expander)
+    assert len(app.table) + len(app.dataframe) >= 2
+
+    app.radio(key="alpha_erro_tipo_i").set_value(0.01).run()
+    assert not app.exception
+    textos = [m.value for m in app.markdown]
+    assert texto_erro_tipo_i(dados_g3(alpha=0.01)) in textos
+

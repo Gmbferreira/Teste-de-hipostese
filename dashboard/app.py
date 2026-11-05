@@ -8,6 +8,7 @@ import math
 import sys
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 # O `streamlit run` só coloca a pasta dashboard/ no caminho de importação.
@@ -17,8 +18,12 @@ if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
 from src.exemplo import gerar_exemplo, interpretacao, pr_mais_lento, tabela_resultados  # noqa: E402
-from src.formatacao import numero, p_valor  # noqa: E402
+from src.formatacao import numero, p_valor, porcentagem  # noqa: E402
 from src.grafico_g2 import grafico_g2  # noqa: E402
+from src.grafico_g3 import grafico_g3  # noqa: E402
+from src.monte_carlo import simular, tabela_rejeicoes  # noqa: E402
+from src.situacoes import POR_CHAVE, TODAS_AS_SITUACOES  # noqa: E402
+from src.textos import texto_erro_tipo_i  # noqa: E402
 
 REPOSITORIO_URL = "https://github.com/Gmbferreira/Teste-de-hipostese"
 PROJECTS_URL = "https://github.com/users/Gmbferreira/projects/4"
@@ -125,12 +130,64 @@ with st.expander("Interpretação completa do exemplo"):
     st.markdown(interpretacao(exemplo))
 
 # ---------------------------------------------------------------------------
-# 4. Erro tipo I
+# 4. Erro tipo I (issues #14, #16, #18 e #19)
 # ---------------------------------------------------------------------------
 st.header("4. Erro tipo I")
-st.info(
-    "Em construção — Sprint 02: simulações de Q1 e Q3 e gráfico G3."
+
+
+@st.cache_resource(show_spinner="Rodando 10.000 conjuntos com H₀ verdadeira em cada situação...")
+def simulacoes_com_h0():
+    """P-valores dos dois testes com δ = 0 na situação realista (Q1) e nas de Q3."""
+    return [simular(situacao, 0.0) for situacao in TODAS_AS_SITUACOES]
+
+
+def tabela_erro_tipo_i_para_exibir(tabela):
+    """Uma linha por situação, com a taxa e o IC de 95% de cada teste."""
+    linhas = []
+    for chave, grupo in tabela.groupby("situacao", sort=False):
+        linha = {"Situação": POR_CHAVE[chave].nome}
+        for teste, rotulo in (("welch", "t de Welch"), ("mann_whitney", "Mann-Whitney")):
+            r = grupo[grupo["teste"] == teste].iloc[0]
+            linha[rotulo] = (
+                f"{porcentagem(r.taxa, 2)} "
+                f"({porcentagem(r.ic95_inferior, 2)} a {porcentagem(r.ic95_superior, 2)})"
+            )
+        linhas.append(linha)
+    return linhas
+
+
+alpha_g3 = st.radio(
+    "Nível de significância (α)",
+    options=[0.05, 0.01],
+    format_func=lambda a: porcentagem(a, 0),
+    horizontal=True,
+    key="alpha_erro_tipo_i",
+    help="Com 1% a região de rejeição encolhe; compare as duas opções no G3.",
 )
+tabela_g3 = tabela_rejeicoes(simulacoes_com_h0(), alpha_g3)
+st.markdown(texto_erro_tipo_i(tabela_g3))
+st.pyplot(
+    grafico_g3(tabela_g3),
+    alt=(
+        "G3: erro tipo I do t de Welch e do Mann-Whitney em cada situação simulada, "
+        "com intervalo de 95% e uma linha vertical em α."
+    ),
+)
+st.markdown(
+    f"**Erro tipo I com α = {porcentagem(alpha_g3, 0)}** "
+    "(10.000 conjuntos por situação, intervalo de 95% entre parênteses)"
+)
+st.table(pd.DataFrame(tabela_erro_tipo_i_para_exibir(tabela_g3)).set_index("Situação"))
+with st.expander("Como cada situação foi simulada"):
+    st.markdown(
+        "| Situação | O que muda | Por que incluímos |\n|---|---|---|\n"
+        + "\n".join(
+            f"| {s.nome} | {s.descricao} | {s.motivo} |" for s in TODAS_AS_SITUACOES
+        )
+        + "\n\nTodas as situações usam a mesma semente, então os sorteios de base são "
+        "os mesmos e a diferença entre elas vem só do que foi alterado. As situações "
+        "foram registradas na expectativa antes de simular."
+    )
 
 # ---------------------------------------------------------------------------
 # 5. Poder
