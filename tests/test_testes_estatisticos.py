@@ -11,12 +11,13 @@ from scipy import stats
 
 from src.config import ALPHA, make_rng
 from src.testes_estatisticos import (
+    aplicar_mann_whitney,
     aplicar_testes,
+    aplicar_welch,
     distribuicao_nula_u,
     limites_rejeicao_u,
     p_valor_exato_u,
-    aplicar_mann_whitney,
-    aplicar_welch,
+    tamanho_exato_mann_whitney,
 )
 
 
@@ -142,3 +143,20 @@ def test_rejeita_vetor_com_menos_de_duas_observacoes() -> None:
         aplicar_welch(np.array([1.0]), np.array([1.0, 2.0]))
     with pytest.raises(ValueError):
         aplicar_mann_whitney(np.ones((2, 3)), np.ones(3))
+
+
+@pytest.mark.parametrize(("n1", "n2"), [(35, 35), (10, 10), (10, 60), (3, 3)])
+def test_tamanho_exato_do_mann_whitney_nao_passa_de_alpha(n1: int, n2: int) -> None:
+    tamanho = tamanho_exato_mann_whitney(n1, n2)
+    inferior, superior = limites_rejeicao_u(n1, n2)
+    pmf = distribuicao_nula_u(n1, n2)
+    assert 0 <= tamanho <= ALPHA
+    regiao = pmf[: max(inferior + 1, 0)].sum() + pmf[min(superior, pmf.size) :].sum()
+    assert math.isclose(tamanho, regiao)
+
+
+def test_tamanho_exato_com_10_por_grupo_fica_abaixo_de_5_por_cento() -> None:
+    # Com 10 PRs por grupo, U só vai de 0 a 100 e a região de rejeição soma 4,3%.
+    assert math.isclose(tamanho_exato_mann_whitney(10, 10), 0.0433, abs_tol=5e-4)
+    assert tamanho_exato_mann_whitney(35, 35) > 0.049
+    assert tamanho_exato_mann_whitney(3, 3) == 0  # nem o caso mais extremo rejeita

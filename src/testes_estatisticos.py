@@ -199,6 +199,17 @@ def limites_rejeicao_u(n_com: int, n_sem: int, alpha: float = ALPHA) -> tuple[in
     return total - superior, superior
 
 
+def tamanho_exato_mann_whitney(n_com: int, n_sem: int, alpha: float = ALPHA) -> float:
+    """Chance de o Mann-Whitney exato rejeitar H₀ quando ela é verdadeira.
+
+    Como U só assume valores inteiros, a região de rejeição não soma exatamente
+    alpha: com grupos pequenos ela fica abaixo, e o teste rejeita menos que 5%.
+    """
+    inferior, superior = limites_rejeicao_u(n_com, n_sem, alpha)
+    pmf = distribuicao_nula_u(n_com, n_sem)
+    return float(pmf[: max(inferior + 1, 0)].sum() + pmf[min(superior, pmf.size) :].sum())
+
+
 def aplicar_testes(
     com_bot: np.ndarray, sem_bot: np.ndarray, alpha: float = ALPHA
 ) -> dict[str, ResultadoWelch | ResultadoMannWhitney]:
