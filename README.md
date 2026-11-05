@@ -73,6 +73,19 @@ python -m src.analise_exploratoria
 O comando atualiza [`docs/analise_exploratoria.md`](docs/analise_exploratoria.md)
 e as figuras em `docs/figuras/`.
 
+Para regenerar o exemplo da seção 3 (os dois testes aplicados a um conjunto
+simulado) e o gráfico G2:
+
+```bash
+python -m src.exemplo
+python -m src.grafico_g2
+```
+
+Eles atualizam [`docs/exemplo_testes.md`](docs/exemplo_testes.md) e
+`docs/figuras/g2_estatistica_sob_h0.png`. O dashboard não lê esses arquivos:
+ele refaz o exemplo e o G2 na hora, com a mesma semente, então os números são
+os mesmos.
+
 ## Testes
 
 ```bash
