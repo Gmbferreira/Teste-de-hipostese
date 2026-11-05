@@ -145,17 +145,17 @@ Sprint 1:
 
 Sprint 2:
 
-- [ ] #14 — Erro tipo I com H₀ verdadeira (Q1)
+- [x] #14 — Erro tipo I com H₀ verdadeira (Q1)
 - [ ] #15 — Poder dos testes (Q2)
-- [ ] #16 — Situações que violam os pressupostos (Q3)
-- [ ] #18 — Gráfico G3
-- [ ] #19 — Integração do G3 no dashboard
+- [x] #16 — Situações que violam os pressupostos (Q3)
+- [x] #18 — Gráfico G3
+- [x] #19 — Integração do G3 no dashboard
 - [ ] #20 — Gráfico G4
 - [ ] #21 — Integração do G4 no dashboard
 
 Entrega final:
 
-- [ ] #22 — Testes nos dados reais (seção 6)
+- [x] #22 — Testes nos dados reais (seção 6)
 - [ ] #23 — Conclusão (seção 7)
 - [ ] #24 — Publicação do dashboard
 - [ ] #25 — Apresentação oral
