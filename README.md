@@ -79,13 +79,13 @@ Os módulos devem criar o gerador com `make_rng()` em vez de chamar
 ## Links
 
 - Repositório: <https://github.com/Gmbferreira/Teste-de-hipostese>
-- GitHub Projects: _a preencher_
+- GitHub Projects: <https://github.com/users/Gmbferreira/projects/4>
 - Dashboard publicado: _a preencher_
 
 ## Andamento
 
 - [x] #2 — Estrutura do repositório, ambiente e README
-- [ ] #6 — Esqueleto do dashboard (7 seções)
+- [x] #6 — Esqueleto do dashboard (7 seções)
 - [ ] #8 — Cenário: pergunta, H₀ e H₁
 - [ ] #3 — Coleta dos dados reais
 - [ ] #4 — Análise exploratória e parâmetros da simulação
