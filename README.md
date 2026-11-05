@@ -27,6 +27,7 @@ definição dos erros tipo I e II estão em [`docs/cenario.md`](docs/cenario.md)
 ├── dashboard/        # dashboard Streamlit
 ├── data/             # amostra de dados reais (CSV) e sua documentação
 ├── docs/             # cenário, expectativa, análise exploratória e interpretações
+├── resultados/       # taxas de rejeição das simulações de Q1–Q3 (CSV)
 ├── src/              # código reutilizável (configuração, simulação, testes, gráficos)
 ├── requirements.txt
 └── README.md
@@ -85,6 +86,21 @@ Eles atualizam [`docs/exemplo_testes.md`](docs/exemplo_testes.md) e
 `docs/figuras/g2_estatistica_sob_h0.png`. O dashboard não lê esses arquivos:
 ele refaz o exemplo e o G2 na hora, com a mesma semente, então os números são
 os mesmos.
+
+Para regenerar as simulações de erro tipo I e de Q3 (10.000 repetições por
+ponto) e o gráfico G3:
+
+```bash
+python -m src.monte_carlo
+python -m src.situacoes
+python -m src.grafico_g3
+```
+
+O primeiro grava a Q1 em `resultados/q1_erro_tipo_i.csv`. O segundo grava o
+erro tipo I e o poder das situações de Q3 em `resultados/` e a descrição delas
+em [`docs/situacoes_q3.md`](docs/situacoes_q3.md). O dashboard também roda essas
+simulações sozinho na primeira vez que abre (leva alguns segundos) e guarda o
+resultado em cache.
 
 ## Testes
 
