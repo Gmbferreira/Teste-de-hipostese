@@ -6,8 +6,8 @@ usando dados reais e dados simulados.
 
 ## Cenário
 
-**Pergunta:** pull requests revisados por um bot levam menos tempo até o merge
-do que pull requests sem revisão de bot?
+**Pergunta:** a revisão feita por um bot muda o tempo que um pull request leva
+da abertura até o merge?
 
 **Par de testes:** teste t de Welch × teste de Mann-Whitney (par P1 do enunciado).
 
