@@ -1,0 +1,3 @@
+situacao,delta_mu,teste,alpha,repeticoes,rejeicoes,taxa,ic95_inferior,ic95_superior
+realista,0.000000,welch,0.050000,10000,234,0.023400,0.020615,0.026551
+realista,0.000000,mann_whitney,0.050000,10000,476,0.047600,0.043598,0.051950
