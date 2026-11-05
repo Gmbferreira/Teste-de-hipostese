@@ -64,6 +64,21 @@ streamlit run dashboard/app.py
 
 O dashboard abre em <http://localhost:8501>.
 
+Para regenerar a análise exploratória e os parâmetros da simulação:
+
+```bash
+python -m src.analise_exploratoria
+```
+
+O comando atualiza [`docs/analise_exploratoria.md`](docs/analise_exploratoria.md)
+e as figuras em `docs/figuras/`.
+
+## Testes
+
+```bash
+pytest -q
+```
+
 ## Reprodutibilidade
 
 Toda a aleatoriedade do projeto usa a semente fixa definida em
@@ -88,7 +103,7 @@ Os módulos devem criar o gerador com `make_rng()` em vez de chamar
 - [x] #6 — Esqueleto do dashboard (7 seções)
 - [ ] #8 — Cenário: pergunta, H₀ e H₁
 - [x] #3 — Coleta dos dados reais
-- [ ] #4 — Análise exploratória e parâmetros da simulação
+- [x] #4 — Análise exploratória e parâmetros da simulação
 - [ ] #9 — Gerador de dados simulados
 - [ ] #10 — Expectativa registrada antes de simular
 - [ ] #11 — Aplicação dos dois testes e interpretação
