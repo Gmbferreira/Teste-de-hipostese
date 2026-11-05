@@ -126,7 +126,7 @@ st.pyplot(
 )
 
 st.markdown("**Resultado dos dois testes no conjunto de exemplo**")
-st.dataframe(tabela_resultados(exemplo), hide_index=True)
+st.table(tabela_resultados(exemplo).set_index("Teste"))
 with st.expander("Interpretação completa do exemplo"):
     st.markdown(interpretacao(exemplo))
 

@@ -42,7 +42,7 @@ def test_secao_3_tem_texto_tabela_e_interpretacao() -> None:
     assert "t de Welch" in textos and "Mann-Whitney" in textos
     assert f"p = {p_valor(exemplo.mann_whitney.p_valor)}" in textos
     assert f"p = {p_valor(exemplo.welch.p_valor)}" in textos
-    assert len(app.dataframe) >= 1
+    assert len(app.table) + len(app.dataframe) >= 1
     assert any(e.label == "Interpretação completa do exemplo" for e in app.expander)
 
 
