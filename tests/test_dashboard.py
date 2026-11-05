@@ -1,4 +1,4 @@
-"""Roda o dashboard sem navegador e confere as seções 3 e 4 (issues #13 e #19)."""
+"""Roda o dashboard sem navegador e confere as seções 3, 4 e 6 (issues #13, #19 e #22)."""
 
 from __future__ import annotations
 
@@ -62,3 +62,13 @@ def test_secao_4_mostra_o_erro_tipo_i_e_troca_o_alpha() -> None:
     textos = [m.value for m in app.markdown]
     assert texto_erro_tipo_i(dados_g3(alpha=0.01)) in textos
 
+
+def test_secao_6_mostra_os_testes_nos_dados_reais() -> None:
+    """Seção 6 (issue #22): texto e tabela com os dois testes nos dados coletados."""
+    from src.dados_reais import analisar, texto_dados_reais
+
+    app = _rodar()
+    assert not app.exception
+    textos = [m.value for m in app.markdown]
+    assert texto_dados_reais(analisar()) in textos
+    assert len(app.table) + len(app.dataframe) >= 3

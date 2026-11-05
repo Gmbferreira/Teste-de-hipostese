@@ -17,6 +17,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
+from src.dados_reais import analisar, tabela_dados_reais, texto_dados_reais  # noqa: E402
 from src.exemplo import gerar_exemplo, interpretacao, pr_mais_lento, tabela_resultados  # noqa: E402
 from src.formatacao import numero, p_valor, porcentagem  # noqa: E402
 from src.grafico_g2 import grafico_g2  # noqa: E402
@@ -198,12 +199,20 @@ st.info(
 )
 
 # ---------------------------------------------------------------------------
-# 6. Dados reais
+# 6. Dados reais (issue #22)
 # ---------------------------------------------------------------------------
 st.header("6. Dados reais")
-st.info(
-    "Em construção — tabela com estatística, p-valor, tamanho do efeito "
-    "e conclusão de cada teste (#3, #4 e #11)."
+resultado_real = analisar()
+st.markdown(texto_dados_reais(resultado_real))
+st.markdown(
+    "**Os dois testes nos dados coletados** "
+    "(35 PRs com bot e 35 sem bot do `supabase/supabase`, α = 5% bicaudal)"
+)
+st.table(tabela_dados_reais(resultado_real).set_index("Teste"))
+st.caption(
+    "A última linha é só referência: o Welch aplicado ao log do tempo, a situação em que "
+    "ele ficou perto de 5% nas simulações. A diferença típica do Mann-Whitney é a "
+    "mediana das diferenças entre todos os pares (estimador de Hodges-Lehmann)."
 )
 
 # ---------------------------------------------------------------------------
