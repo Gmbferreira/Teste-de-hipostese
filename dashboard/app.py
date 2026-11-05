@@ -1,7 +1,7 @@
 """Dashboard do Laboratório 04 — Testes de Hipótese.
 
-Esqueleto com as 7 seções exigidas na ordem oficial. As seções são
-preenchidas pelas issues seguintes (#8, #5, #7, #12, #13 e Sprint 02).
+As 7 seções seguem a ordem oficial. As seções 1 e 2 foram integradas na
+issue #7; as demais são preenchidas pelas issues #12, #13 e Sprint 02.
 """
 
 import math
@@ -20,11 +20,12 @@ if str(RAIZ) not in sys.path:
 from src.dados_reais import analisar, tabela_dados_reais, texto_dados_reais  # noqa: E402
 from src.exemplo import gerar_exemplo, interpretacao, pr_mais_lento, tabela_resultados  # noqa: E402
 from src.formatacao import numero, p_valor, porcentagem  # noqa: E402
+from src.grafico_g1 import grafico_g1  # noqa: E402
 from src.grafico_g2 import grafico_g2  # noqa: E402
 from src.grafico_g3 import grafico_g3  # noqa: E402
 from src.monte_carlo import simular, tabela_rejeicoes  # noqa: E402
 from src.situacoes import POR_CHAVE, TODAS_AS_SITUACOES  # noqa: E402
-from src.textos import texto_erro_tipo_i  # noqa: E402
+from src.textos import texto_cenario, texto_dados, texto_erro_tipo_i  # noqa: E402
 
 REPOSITORIO_URL = "https://github.com/Gmbferreira/Teste-de-hipostese"
 PROJECTS_URL = "https://github.com/users/Gmbferreira/projects/4"
@@ -56,18 +57,22 @@ st.caption(
 st.divider()
 
 # ---------------------------------------------------------------------------
-# 1. Cenário
+# 1. Cenário (issue #7)
 # ---------------------------------------------------------------------------
 st.header("1. Cenário")
-st.info("Em construção — pergunta, H₀ e H₁ entram na issue #8.")
+st.markdown(texto_cenario())
 
 # ---------------------------------------------------------------------------
-# 2. Os dados
+# 2. Os dados (issue #7)
 # ---------------------------------------------------------------------------
 st.header("2. Os dados")
-st.info(
-    "Em construção — dados reais (#3 e #4) e gráfico G1 (#5), "
-    "integrados na issue #7."
+st.markdown(texto_dados())
+st.pyplot(
+    grafico_g1(),
+    alt=(
+        "G1: histogramas do tempo até o merge dos grupos com e sem bot, "
+        "em dados reais e simulados, em escala logarítmica."
+    ),
 )
 
 # ---------------------------------------------------------------------------

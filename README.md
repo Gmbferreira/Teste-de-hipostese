@@ -149,7 +149,7 @@ Sprint 1:
 - [x] #11 — Aplicação dos dois testes e interpretação
 - [x] #5 — Gráfico G1
 - [x] #12 — Gráfico G2
-- [ ] #7 — Integração do G1 no dashboard
+- [x] #7 — Integração do G1 no dashboard
 - [x] #13 — Integração do G2 no dashboard
 
 Sprint 2:

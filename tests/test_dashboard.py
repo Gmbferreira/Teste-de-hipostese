@@ -1,4 +1,4 @@
-"""Roda o dashboard sem navegador e confere as seções 3, 4 e 6 (issues #13, #19 e #22)."""
+"""Roda o dashboard sem navegador e confere as seções 1, 2, 3, 4 e 6 (issues #7, #13, #19 e #22)."""
 
 from __future__ import annotations
 
@@ -32,6 +32,32 @@ def test_dashboard_roda_sem_erros_e_mantem_as_secoes_na_ordem() -> None:
     app = _rodar()
     assert not app.exception
     assert [h.value for h in app.header] == SECOES
+
+
+def test_secao_1_mostra_o_cenario() -> None:
+    """Seção 1 (issue #7): pergunta, hipóteses, teste e erros no cenário."""
+    from src.textos import texto_cenario
+
+    app = _rodar()
+    textos = [m.value for m in app.markdown]
+    assert texto_cenario() in textos
+    assert not any("Em construção — pergunta" in info.value for info in app.info)
+
+
+def test_secao_2_mostra_o_texto_e_o_g1() -> None:
+    """Seção 2 (issue #7): texto sobre os dados e o gráfico G1."""
+    from src.textos import texto_dados
+
+    app = _rodar()
+    textos = [m.value for m in app.markdown]
+    assert texto_dados() in textos
+    alts = [
+        imagem.alt
+        for elemento in app.get("image")
+        for imagem in elemento.proto.imgs
+    ]
+    assert any("G1" in alt for alt in alts)
+    assert not any("issue #7" in info.value for info in app.info)
 
 
 def test_secao_3_tem_texto_tabela_e_interpretacao() -> None:

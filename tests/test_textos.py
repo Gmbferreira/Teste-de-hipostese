@@ -1,16 +1,34 @@
-"""Testes dos textos gerados para a seção 4 do dashboard (issue #19)."""
+"""Testes dos textos gerados para as seções 1, 2 e 4 do dashboard (issues #7 e #19)."""
 
 from __future__ import annotations
 
 import re
 
+import numpy as np
 import pandas as pd
 import pytest
 
-from src.formatacao import porcentagem
+from src.config import SEED
+from src.dados_reais import carregar_grupos
+from src.formatacao import numero, porcentagem
 from src.grafico_g3 import dados_g3
 from src.monte_carlo import Proporcao, margem_esperada
-from src.textos import CONSERVADOR, LIBERAL, PERTO, classificar, texto_erro_tipo_i
+from src.parametros import (
+    DELTA_MU_OBSERVADO,
+    GRUPO_CONTROLE,
+    PARAMETROS_REAIS,
+    RAZAO_GEOMETRICA_OBSERVADA,
+)
+from src.simulacao import N_POR_GRUPO
+from src.textos import (
+    CONSERVADOR,
+    LIBERAL,
+    PERTO,
+    classificar,
+    texto_cenario,
+    texto_dados,
+    texto_erro_tipo_i,
+)
 
 
 def _frases(texto: str) -> int:
@@ -31,6 +49,61 @@ def _tabela(taxas: dict[tuple[str, str], int], alpha: float = 0.05) -> pd.DataFr
             }
         )
     return pd.DataFrame(linhas)
+
+
+def _outliers_iqr(x: np.ndarray) -> int:
+    q1, q3 = np.percentile(x, [25, 75])
+    iqr = q3 - q1
+    return int(np.count_nonzero((x < q1 - 1.5 * iqr) | (x > q3 + 1.5 * iqr)))
+
+
+def test_texto_cenario_cobre_pergunta_hipoteses_e_erros() -> None:
+    texto = texto_cenario()
+    for termo in (
+        "Pergunta",
+        "H₀",
+        "H₁",
+        "t de Welch",
+        "Mann-Whitney",
+        "bicaudais",
+        "5%",
+        "tipo I",
+        "tipo II",
+        "docs/cenario.md",
+    ):
+        assert termo in texto
+    assert "α = 1%" in texto_cenario(0.01)
+
+
+def test_texto_dados_tem_de_2_a_4_frases_e_cita_o_essencial() -> None:
+    texto = texto_dados()
+    assert 2 <= _frases(texto) <= 4
+    controle = PARAMETROS_REAIS[GRUPO_CONTROLE]
+    for termo in (
+        "assimétric",
+        "outlier",
+        "lognormal",
+        "sem bot",
+        f"μ={numero(controle.mu, 2)}",
+        f"σ={numero(controle.sigma, 2)}",
+        f"δ={numero(DELTA_MU_OBSERVADO, 2)}",
+        f"{numero(RAZAO_GEOMETRICA_OBSERVADA, 2)}×",
+        f"{N_POR_GRUPO} PRs",
+        f"semente {SEED}",
+    ):
+        assert termo in texto
+
+
+def test_texto_dados_usa_as_estatisticas_reais() -> None:
+    com_bot, sem_bot = carregar_grupos()
+    texto = texto_dados()
+    assert f"Os {len(com_bot) + len(sem_bot)} PRs reais" in texto
+    assert numero(float(np.median(com_bot)), 1) in texto
+    assert numero(float(np.max(sem_bot)), 1) in texto
+    assert (
+        f"há {_outliers_iqr(com_bot)} outliers com bot e "
+        f"{_outliers_iqr(sem_bot)} sem bot"
+    ) in texto
 
 
 def test_classificar() -> None:
