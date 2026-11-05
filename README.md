@@ -87,6 +87,15 @@ Eles atualizam [`docs/exemplo_testes.md`](docs/exemplo_testes.md) e
 ele refaz o exemplo e o G2 na hora, com a mesma semente, então os números são
 os mesmos.
 
+Para regenerar o gráfico G1 (dados reais × dados simulados):
+
+```bash
+python -m src.grafico_g1
+```
+
+Ele atualiza `docs/figuras/g1_dados_reais_simulados.png`. Os dados simulados
+usam o efeito observado, 35 PRs por grupo e a mesma semente do exemplo.
+
 Para regenerar as simulações de erro tipo I e de Q3 (10.000 repetições por
 ponto) e o gráfico G3:
 
@@ -138,7 +147,7 @@ Sprint 1:
 - [x] #9 — Gerador de dados simulados
 - [x] #10 — Expectativa registrada antes de simular
 - [x] #11 — Aplicação dos dois testes e interpretação
-- [ ] #5 — Gráfico G1
+- [x] #5 — Gráfico G1
 - [x] #12 — Gráfico G2
 - [ ] #7 — Integração do G1 no dashboard
 - [x] #13 — Integração do G2 no dashboard
