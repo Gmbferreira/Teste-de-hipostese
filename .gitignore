@@ -11,6 +11,11 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+# Credenciais locais (nunca versionar)
+.env
+.env.*
+!.env.example
+
 # Streamlit
 .streamlit/secrets.toml
 

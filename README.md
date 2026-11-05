@@ -87,7 +87,7 @@ Os módulos devem criar o gerador com `make_rng()` em vez de chamar
 - [x] #2 — Estrutura do repositório, ambiente e README
 - [x] #6 — Esqueleto do dashboard (7 seções)
 - [ ] #8 — Cenário: pergunta, H₀ e H₁
-- [ ] #3 — Coleta dos dados reais
+- [x] #3 — Coleta dos dados reais
 - [ ] #4 — Análise exploratória e parâmetros da simulação
 - [ ] #9 — Gerador de dados simulados
 - [ ] #10 — Expectativa registrada antes de simular
