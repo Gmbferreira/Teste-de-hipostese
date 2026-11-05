@@ -4,7 +4,21 @@ Esqueleto com as 7 seções exigidas na ordem oficial. As seções são
 preenchidas pelas issues seguintes (#8, #5, #7, #12, #13 e Sprint 02).
 """
 
+import math
+import sys
+from pathlib import Path
+
 import streamlit as st
+
+# O `streamlit run` só coloca a pasta dashboard/ no caminho de importação.
+# A raiz do repositório entra aqui para o dashboard usar o código de src/.
+RAIZ = Path(__file__).resolve().parents[1]
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+
+from src.exemplo import gerar_exemplo, interpretacao, pr_mais_lento, tabela_resultados  # noqa: E402
+from src.formatacao import numero, p_valor  # noqa: E402
+from src.grafico_g2 import grafico_g2  # noqa: E402
 
 REPOSITORIO_URL = "https://github.com/Gmbferreira/Teste-de-hipostese"
 PROJECTS_URL = "https://github.com/users/Gmbferreira/projects/4"
@@ -51,13 +65,64 @@ st.info(
 )
 
 # ---------------------------------------------------------------------------
-# 3. Como os testes funcionam
+# 3. Como os testes funcionam (issues #11, #12 e #13)
 # ---------------------------------------------------------------------------
 st.header("3. Como os testes funcionam")
-st.info(
-    "Em construção — aplicação dos testes (#11) e gráfico G2 (#12), "
-    "integrados na issue #13."
+
+
+def texto_como_os_testes_funcionam(exemplo) -> str:
+    """Texto do G2: o que cada teste compara, a região de rejeição e o p-valor."""
+    w, m = exemplo.welch, exemplo.mann_whitney
+    inferior, superior = m.regiao_rejeicao
+    total = len(exemplo.com_bot) + len(exemplo.sem_bot)
+
+    def resultado(r, nome: str) -> str:
+        decisao = "rejeitou H₀" if r.rejeita_h0 else "não rejeitou H₀"
+        return f"o {nome} {decisao} (p = {p_valor(r.p_valor)})"
+
+    if exemplo.h0_verdadeira:
+        cenario = "um conjunto simulado sem efeito"
+    else:
+        vezes = numero(math.exp(exemplo.delta_mu))
+        cenario = f"um conjunto simulado em que os PRs com bot são {vezes} vezes mais lentos"
+
+    lento = pr_mais_lento(exemplo)
+    motivo = ""
+    if lento.mudou_a_decisao_do_welch(w) and not w.rejeita_h0:
+        motivo = (
+            f", porque um único PR de {numero(lento.tempo, 0)} h inflou a média e o "
+            f"desvio-padrão do grupo {lento.grupo}"
+        )
+
+    return (
+        "O **t de Welch** compara as médias dos dois grupos, e o **Mann-Whitney** "
+        "compara os postos, isto é, se os PRs com bot tendem a ficar no fim quando os "
+        f"{total} tempos são colocados em ordem. Como o teste é bicaudal, a região de "
+        "rejeição (faixa cinza) fica nas duas pontas da distribuição de cada estatística "
+        f"sob H₀ e soma 5%: |t| > {numero(w.t_critico)} no Welch e "
+        f"U ≤ {numero(inferior, 0)} ou U ≥ {numero(superior, 0)} no Mann-Whitney. "
+        "O p-valor é a área pintada: a chance de, sem efeito nenhum, sair uma "
+        "estatística tão afastada do centro quanto a do exemplo, e não a chance de H₀ "
+        f"ser verdadeira. No exemplo, {cenario}, {resultado(m, 'Mann-Whitney')} e "
+        f"{resultado(w, 'Welch')}{motivo}."
+    )
+
+
+exemplo = gerar_exemplo()
+st.markdown(texto_como_os_testes_funcionam(exemplo))
+
+st.pyplot(
+    grafico_g2(exemplo),
+    alt=(
+        "G2: distribuição t de Welch e distribuição exata de U de Mann-Whitney sob H₀, "
+        "com a região de rejeição em cinza e o p-valor do exemplo como área pintada."
+    ),
 )
+
+st.markdown("**Resultado dos dois testes no conjunto de exemplo**")
+st.dataframe(tabela_resultados(exemplo), hide_index=True)
+with st.expander("Interpretação completa do exemplo"):
+    st.markdown(interpretacao(exemplo))
 
 # ---------------------------------------------------------------------------
 # 4. Erro tipo I
