@@ -112,15 +112,34 @@ Os módulos devem criar o gerador com `make_rng()` em vez de chamar
 
 ## Andamento
 
+Sprint 1:
+
 - [x] #2 — Estrutura do repositório, ambiente e README
 - [x] #6 — Esqueleto do dashboard (7 seções)
-- [ ] #8 — Cenário: pergunta, H₀ e H₁
+- [x] #8 — Cenário: pergunta, H₀ e H₁
 - [x] #3 — Coleta dos dados reais
 - [x] #4 — Análise exploratória e parâmetros da simulação
-- [ ] #9 — Gerador de dados simulados
-- [ ] #10 — Expectativa registrada antes de simular
-- [ ] #11 — Aplicação dos dois testes e interpretação
+- [x] #9 — Gerador de dados simulados
+- [x] #10 — Expectativa registrada antes de simular
+- [x] #11 — Aplicação dos dois testes e interpretação
 - [ ] #5 — Gráfico G1
-- [ ] #12 — Gráfico G2
+- [x] #12 — Gráfico G2
 - [ ] #7 — Integração do G1 no dashboard
-- [ ] #13 — Integração do G2 no dashboard
+- [x] #13 — Integração do G2 no dashboard
+
+Sprint 2:
+
+- [ ] #14 — Erro tipo I com H₀ verdadeira (Q1)
+- [ ] #15 — Poder dos testes (Q2)
+- [ ] #16 — Situações que violam os pressupostos (Q3)
+- [ ] #18 — Gráfico G3
+- [ ] #19 — Integração do G3 no dashboard
+- [ ] #20 — Gráfico G4
+- [ ] #21 — Integração do G4 no dashboard
+
+Entrega final:
+
+- [ ] #22 — Testes nos dados reais (seção 6)
+- [ ] #23 — Conclusão (seção 7)
+- [ ] #24 — Publicação do dashboard
+- [ ] #25 — Apresentação oral
