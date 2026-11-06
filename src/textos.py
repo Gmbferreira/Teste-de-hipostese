@@ -37,6 +37,7 @@ NA_FRASE = {
     "desbalanceado": "com grupos desbalanceados",
     "outliers": "com outliers",
     "escala_log": "na escala log",
+    "reamostragem": "com os tempos reais reamostrados",
 }
 
 
@@ -187,11 +188,20 @@ def texto_erro_tipo_i(tabela: pd.DataFrame) -> str:
     if welch[CONSERVADOR]:
         itens = [f"{_taxa(t)} {NA_FRASE[c]}" for c, t in welch[CONSERVADOR]]
         sujeito = "nos tempos em horas ele" if welch[PERTO] else "o **t de Welch**"
+        taxas = {c: t for classe in welch.values() for c, t in classe}
+        cauda = ""
+        if {"reamostragem", "realista"} <= set(taxas) and abs(
+            taxas["reamostragem"] - alpha
+        ) < abs(taxas["realista"] - alpha):
+            cauda = (
+                "; como a lognormal gera PRs mais lentos que os reais, com a cauda da "
+                "amostra esse desvio fica bem menor"
+            )
         frases.append(
             _maiuscula(
                 f"{sujeito} foi conservador e rejeitou H₀ menos do que deveria "
                 f"({_juntar(itens)}), porque os PRs muito lentos inflam o desvio-padrão "
-                "e o t raramente fica grande."
+                f"e o t raramente fica grande{cauda}."
             )
         )
 

@@ -48,6 +48,10 @@ class Situacao:
     prob_outlier: float = 0.0
     atraso_outlier_horas: tuple[float, float] = (168.0, 672.0)  # de 1 a 4 semanas
     escala_log: bool = False
+    # Reamostragem: em vez da lognormal, sorteia o log destes tempos reais e soma
+    # um ruído normal com este desvio, para a amostra não ter valores repetidos.
+    base_log: tuple[float, ...] | None = None
+    ruido_log: float = 0.0
 
 
 REALISTA = Situacao(
@@ -65,9 +69,12 @@ def gerar_conjuntos(
     rng: np.random.Generator,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Gera `repeticoes` conjuntos da situação (matrizes com um conjunto por linha)."""
-    com_bot, sem_bot = gerar_grupos(
-        delta_mu, situacao.n_com, situacao.n_sem, repeticoes=repeticoes, rng=rng
-    )
+    if situacao.base_log is not None:
+        com_bot, sem_bot = _reamostrar(situacao, delta_mu, repeticoes, rng)
+    else:
+        com_bot, sem_bot = gerar_grupos(
+            delta_mu, situacao.n_com, situacao.n_sem, repeticoes=repeticoes, rng=rng
+        )
     if situacao.prob_outlier > 0:
         # Alguns PRs ficam esquecidos e levam de 1 a 4 semanas a mais, nos dois
         # grupos e com a mesma chance, então H₀ continua valendo quando δ = 0.
@@ -75,6 +82,26 @@ def gerar_conjuntos(
         sem_bot = _adicionar_esquecidos(sem_bot, situacao, rng)
     if situacao.escala_log:
         com_bot, sem_bot = np.log(com_bot), np.log(sem_bot)
+    return com_bot, sem_bot
+
+
+def _reamostrar(
+    situacao: Situacao, delta_mu: float, repeticoes: int, rng: np.random.Generator
+) -> tuple[np.ndarray, np.ndarray]:
+    """Bootstrap suavizado: tempos reais sorteados com reposição e um pouco de ruído.
+
+    Os dois grupos vêm da mesma base, então H₀ vale com δ = 0; com efeito, o grupo
+    com bot é multiplicado por exp(δ), como na lognormal. O grupo sem bot é
+    sorteado primeiro, como em gerar_grupos.
+    """
+    base = np.asarray(situacao.base_log)
+
+    def sortear(n: int) -> np.ndarray:
+        log_t = rng.choice(base, size=(repeticoes, n))
+        return np.exp(log_t + rng.normal(0.0, situacao.ruido_log, size=(repeticoes, n)))
+
+    sem_bot = sortear(situacao.n_sem)
+    com_bot = sortear(situacao.n_com) * np.exp(delta_mu)
     return com_bot, sem_bot
 
 

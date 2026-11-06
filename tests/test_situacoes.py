@@ -12,17 +12,22 @@ from src.config import N_SIMULACOES
 from src.monte_carlo import REALISTA, Proporcao, simular
 from src.situacoes import (
     AMOSTRAS_PEQUENAS,
+    DADOS_REAIS,
     DESBALANCEADO,
     ESCALA_LOG,
     OUTLIERS,
     POR_CHAVE,
+    REAMOSTRAGEM,
     SAIDA_DOCS,
     SAIDA_ERRO_TIPO_I,
     SAIDA_PODER,
+    SENSIBILIDADE,
     SITUACOES_Q3,
+    SITUACOES_SIMULADAS,
     TODAS_AS_SITUACOES,
     documento,
     erro_tipo_i_q3,
+    observacoes,
     poder_q3,
 )
 from src.testes_estatisticos import tamanho_exato_mann_whitney
@@ -52,13 +57,13 @@ def test_situacoes_sao_as_registradas_na_expectativa() -> None:
 
 
 def test_erro_tipo_i_em_cada_situacao(tipo_i: pd.DataFrame) -> None:
-    assert len(tipo_i) == 2 * len(SITUACOES_Q3)
+    assert len(tipo_i) == 2 * len(SITUACOES_SIMULADAS)
     assert (tipo_i["delta_mu"] == 0).all()
     assert (tipo_i["repeticoes"] == N_SIMULACOES).all()
 
 
 def test_poder_tem_ao_menos_5_efeitos_comecando_em_zero(poder: pd.DataFrame) -> None:
-    for situacao in SITUACOES_Q3:
+    for situacao in SITUACOES_SIMULADAS:
         efeitos = sorted(poder.loc[poder["situacao"] == situacao.chave, "delta_mu"].unique())
         assert len(efeitos) >= 5
         assert efeitos[0] == 0
@@ -79,8 +84,8 @@ def test_mann_whitney_nao_muda_na_escala_log() -> None:
 
 
 def test_mann_whitney_fica_perto_do_tamanho_exato(tipo_i: pd.DataFrame) -> None:
-    """Com H₀ verdadeira, U tem a distribuição exata em qualquer situação de Q3."""
-    for situacao in SITUACOES_Q3:
+    """Com H₀ verdadeira, U tem a distribuição exata em qualquer situação simulada."""
+    for situacao in SITUACOES_SIMULADAS:
         linha = tipo_i[(tipo_i["situacao"] == situacao.chave) & (tipo_i["teste"] == "mann_whitney")]
         taxa = float(linha["taxa"].iloc[0])
         exato = tamanho_exato_mann_whitney(situacao.n_com, situacao.n_sem)
@@ -103,3 +108,43 @@ def test_proporcao_do_desbalanceado_bate_com_a_contagem(tipo_i: pd.DataFrame) ->
     linha = tipo_i[(tipo_i["situacao"] == "desbalanceado") & (tipo_i["teste"] == "welch")]
     proporcao = Proporcao(int(linha["rejeicoes"].iloc[0]), int(linha["repeticoes"].iloc[0]))
     assert math.isclose(proporcao.taxa, float(linha["taxa"].iloc[0]))
+
+
+def test_reamostragem_e_sensibilidade_separada_das_situacoes_de_q3() -> None:
+    dados = pd.read_csv(DADOS_REAIS)
+    reais = np.log(dados.loc[dados["grupo"] == "sem_bot", "tempo_merge_horas"])
+    assert REAMOSTRAGEM not in SITUACOES_Q3  # não estava na expectativa
+    assert SENSIBILIDADE == (REAMOSTRAGEM,)
+    assert TODAS_AS_SITUACOES[-1] is REAMOSTRAGEM
+    np.testing.assert_allclose(sorted(REAMOSTRAGEM.base_log), sorted(reais))
+    assert REAMOSTRAGEM.ruido_log == 0.25
+
+
+def test_reamostragem_nao_gera_empates_e_aplica_o_efeito() -> None:
+    from src.config import make_rng
+    from src.monte_carlo import gerar_conjuntos
+
+    com, sem = gerar_conjuntos(REAMOSTRAGEM, 0.0, 200, make_rng(3))
+    com_efeito, sem_efeito = gerar_conjuntos(REAMOSTRAGEM, 1.0, 200, make_rng(3))
+    assert com.shape == sem.shape == (200, 35)
+    for linha in np.hstack([com, sem]):
+        assert np.unique(linha).size == linha.size  # o Mann-Whitney exato vale
+    np.testing.assert_array_equal(sem_efeito, sem)
+    np.testing.assert_allclose(com_efeito, com * np.exp(1.0))
+
+
+def test_welch_fica_mais_perto_de_5_por_cento_com_a_cauda_real(tipo_i: pd.DataFrame) -> None:
+    """Sustenta o texto da seção 4 e as observações do docs/situacoes_q3.md."""
+    from src.monte_carlo import erro_tipo_i
+
+    realista = erro_tipo_i()
+    welch_realista = float(realista.loc[realista["teste"] == "welch", "taxa"].iloc[0])
+    linha = tipo_i[(tipo_i["situacao"] == "reamostragem") & (tipo_i["teste"] == "welch")]
+    assert abs(float(linha["taxa"].iloc[0]) - 0.05) < abs(welch_realista - 0.05)
+
+
+def test_observacoes_citam_o_vies_e_a_troca_de_lado(poder: pd.DataFrame) -> None:
+    texto = " ".join(observacoes(poder))
+    assert "viesado" in texto
+    assert "o Welch passa na frente" in texto
+    assert "Na escala log" in texto

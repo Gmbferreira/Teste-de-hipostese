@@ -3,7 +3,8 @@
 Um ponto por teste e situação, com o intervalo de 95% da proporção. A linha
 vertical marca α e a faixa em volta dela é o quanto a taxa varia só por acaso
 com 10.000 repetições: um ponto fora da faixa indica que o teste se desviou de α.
-A primeira linha é a Q1 (situação realista) e as demais são as situações de Q3.
+A primeira linha é a Q1 (situação realista), depois vêm as situações de Q3 e,
+por último, a análise de sensibilidade com os tempos reais reamostrados.
 
 Uso:
     python -m src.grafico_g3
@@ -27,7 +28,7 @@ from src.estilo import CORES_TESTE, ROTULOS_TESTE
 from src.formatacao import numero, porcentagem
 from src.grafico_g2 import EIXO, GRADE, TINTA, TINTA_FRACA, TINTA_SECUNDARIA
 from src.monte_carlo import TESTES, erro_tipo_i, margem_esperada
-from src.situacoes import POR_CHAVE, TODAS_AS_SITUACOES
+from src.situacoes import POR_CHAVE, SENSIBILIDADE, TODAS_AS_SITUACOES
 
 RAIZ = Path(__file__).resolve().parent.parent
 FIGURA_PADRAO = RAIZ / "docs" / "figuras" / "g3_erro_tipo_i.png"
@@ -43,6 +44,8 @@ def dados_g3(alpha: float = ALPHA, repeticoes: int = N_SIMULACOES) -> pd.DataFra
 
 def _rotulo_situacao(chave: str) -> str:
     situacao = POR_CHAVE[chave]
+    if situacao.base_log is not None:
+        return f"Tempos reais reamostrados\nsensibilidade, {situacao.n_com} × {situacao.n_sem}"
     if situacao.escala_log:
         return f"{situacao.nome}\n{situacao.n_com} × {situacao.n_sem}, log do tempo"
     if situacao.prob_outlier:
@@ -61,7 +64,7 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
     chaves = [s.chave for s in TODAS_AS_SITUACOES if s.chave in set(tabela["situacao"])]
     posicao = {chave: len(chaves) - 1 - i for i, chave in enumerate(chaves)}  # de cima para baixo
 
-    fig = Figure(figsize=(10, 6.2), layout="constrained", facecolor="white")
+    fig = Figure(figsize=(10, 6.9), layout="constrained", facecolor="white")
     ax: Axes = fig.subplots()
 
     ax.axvspan(100 * (alpha - margem), 100 * (alpha + margem), color=FAIXA_ACASO, linewidth=0, zorder=0)
@@ -101,9 +104,12 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
                     color=TINTA,
                 )
 
-    # Separa a Q1 (primeira linha) das situações de Q3.
+    # Separa a Q1 (primeira linha), as situações de Q3 e a sensibilidade (última).
     if "realista" in posicao and len(chaves) > 1:
         ax.axhline(posicao["realista"] - 0.5, color=EIXO, linewidth=0.8, zorder=1)
+    for chave in chaves:
+        if POR_CHAVE[chave] in SENSIBILIDADE and posicao[chave] < len(chaves) - 1:
+            ax.axhline(posicao[chave] + 0.5, color=EIXO, linewidth=0.8, zorder=1)
 
     limite_x = max(100 * float(tabela["ic95_superior"].max()) + 1.5, 100 * alpha * 2 + 1)
     ax.set_xlim(0, limite_x)
@@ -147,7 +153,8 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
         labelcolor=TINTA_SECUNDARIA,
     )
     ax.set_title(
-        "Primeira linha: Q1 (situação realista). As demais: situações de Q3.",
+        "Primeira linha: Q1 (situação realista). Depois: situações de Q3. Última: "
+        "sensibilidade com a cauda real, incluída depois de simular.",
         loc="left",
         fontsize=10,
         color=TINTA_SECUNDARIA,

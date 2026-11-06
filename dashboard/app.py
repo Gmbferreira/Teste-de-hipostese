@@ -201,8 +201,11 @@ with st.expander("Como cada situação foi simulada"):
             f"| {s.nome} | {s.descricao} | {s.motivo} |" for s in TODAS_AS_SITUACOES
         )
         + "\n\nTodas as situações usam a mesma semente, então os sorteios de base são "
-        "os mesmos e a diferença entre elas vem só do que foi alterado. As situações "
-        "foram registradas na expectativa antes de simular."
+        "os mesmos e a diferença entre elas vem só do que foi alterado. As quatro "
+        "situações de Q3 foram registradas na expectativa antes de simular. A "
+        "reamostragem dos tempos reais entrou depois, como análise de sensibilidade: "
+        "a lognormal ajustada gera PRs bem mais lentos que os da amostra, e essa "
+        "situação mostra o que muda com a cauda real."
     )
 
 # ---------------------------------------------------------------------------
