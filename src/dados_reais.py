@@ -95,9 +95,9 @@ def tabela_dados_reais(resultado: ResultadoDadosReais) -> pd.DataFrame:
                 "Estatística": f"U = {numero(m.u, 0)} de {numero(m.n_pares, 0)} pares",
                 "p-valor": p_valor(m.p_valor),
                 "Tamanho do efeito": (
-                    f"P(PR com bot demorar mais) = {numero(m.prob_superioridade)} "
-                    f"(r = {numero(m.correlacao_bisserial)}; diferença típica de "
-                    f"{numero(m.hodges_lehmann, 1)} h)"
+                    f"P(PR com bot demorar mais) = {numero(m.prob_superioridade)}, efeito "
+                    f"{m.magnitude} (r = {numero(m.correlacao_bisserial)}; diferença "
+                    f"típica de {numero(m.hodges_lehmann, 1)} h)"
                 ),
                 "Conclusão (α = 5%)": _conclusao(m.rejeita_h0, m.prob_superioridade > 0.5),
             },
@@ -136,7 +136,7 @@ def texto_dados_reais(resultado: ResultadoDadosReais) -> str:
             f"(p = {p_valor(quem_nao.p_valor)})"
             + (
                 ", o que combina com o Welch conservador e com pouco poder que vimos "
-                "nas simulações."
+                "nas simulações com a lognormal."
                 if quem_nao is w
                 else "."
             )
@@ -147,9 +147,11 @@ def texto_dados_reais(resultado: ResultadoDadosReais) -> str:
             f"Os dois testes {decisao} H₀ (Mann-Whitney com p = {p_valor(m.p_valor)} e "
             f"Welch com p = {p_valor(w.p_valor)})."
         )
+    conector = "e" if m.magnitude == "grande" else "mas"
     frases.append(
-        f"O efeito é grande na prática: em {porcentagem(m.prob_superioridade, 0)} dos pares o "
-        f"PR com bot demorou mais e, pelo log do tempo, os PRs com bot são "
+        f"Pela escala de Vargha e Delaney o efeito é {m.magnitude} (em "
+        f"{porcentagem(m.prob_superioridade, 0)} dos pares o PR com bot demorou mais), "
+        f"{conector} na prática ele pesa: pelo log do tempo, os PRs com bot são "
         f"{numero(resultado.razao_geometrica, 1)} vezes mais lentos"
         + (f" (Welch no log com p = {p_valor(wl.p_valor)})." if wl.rejeita_h0 else ".")
     )

@@ -80,6 +80,11 @@ class ResultadoMannWhitney:
         return 2 * self.prob_superioridade - 1
 
     @property
+    def magnitude(self) -> str:
+        """Tamanho do efeito pela escala de Vargha e Delaney para o A (= P(T_bot > T_sem))."""
+        return magnitude_vargha_delaney(self.prob_superioridade)
+
+    @property
     def regiao_rejeicao(self) -> tuple[int, int]:
         """Rejeita H₀ se U <= primeiro valor ou U >= segundo valor."""
         return limites_rejeicao_u(self.n_com, self.n_sem, self.alpha)
@@ -87,6 +92,20 @@ class ResultadoMannWhitney:
     @property
     def rejeita_h0(self) -> bool:
         return self.p_valor < self.alpha
+
+
+def magnitude_vargha_delaney(a: float) -> str:
+    """Classifica o A de Vargha e Delaney (2000): pequeno a partir de 0,56, médio a
+    partir de 0,64 e grande a partir de 0,71, contando a distância até 0,5 nos dois
+    sentidos."""
+    distancia = abs(a - 0.5) + 1e-12  # 0,71 - 0,5 dá 0,20999... em ponto flutuante
+    if distancia < 0.06:
+        return "desprezível"
+    if distancia < 0.14:
+        return "pequeno"
+    if distancia < 0.21:
+        return "médio"
+    return "grande"
 
 
 def _validar(com_bot: np.ndarray, sem_bot: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

@@ -73,3 +73,9 @@ def test_texto_tem_de_2_a_4_frases_e_os_p_valores(resultado) -> None:
     assert f"p = {p_valor(resultado.welch.p_valor)}" in texto
     if resultado.welch.rejeita_h0 != resultado.mann_whitney.rejeita_h0:
         assert "discordaram" in texto
+
+
+def test_texto_usa_a_escala_de_vargha_e_delaney(resultado) -> None:
+    texto = texto_dados_reais(resultado)
+    assert f"o efeito é {resultado.mann_whitney.magnitude}" in texto
+    assert "Vargha e Delaney" in texto

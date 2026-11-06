@@ -16,6 +16,7 @@ from src.testes_estatisticos import (
     aplicar_welch,
     distribuicao_nula_u,
     limites_rejeicao_u,
+    magnitude_vargha_delaney,
     p_valor_exato_u,
     tamanho_exato_mann_whitney,
 )
@@ -160,3 +161,19 @@ def test_tamanho_exato_com_10_por_grupo_fica_abaixo_de_5_por_cento() -> None:
     assert math.isclose(tamanho_exato_mann_whitney(10, 10), 0.0433, abs_tol=5e-4)
     assert tamanho_exato_mann_whitney(35, 35) > 0.049
     assert tamanho_exato_mann_whitney(3, 3) == 0  # nem o caso mais extremo rejeita
+
+
+@pytest.mark.parametrize(
+    ("a", "esperado"),
+    [(0.50, "desprezível"), (0.55, "desprezível"), (0.56, "pequeno"), (0.36, "médio"),
+     (0.64, "médio"), (0.66, "médio"), (0.71, "grande"), (0.20, "grande")],
+)
+def test_magnitude_de_vargha_e_delaney(a: float, esperado: str) -> None:
+    assert magnitude_vargha_delaney(a) == esperado
+
+
+def test_resultado_do_mann_whitney_traz_a_magnitude() -> None:
+    sem_bot = make_rng(5).normal(10, 1, size=40)
+    resultado = aplicar_mann_whitney(sem_bot + 5.0, sem_bot)
+    assert resultado.prob_superioridade > 0.99
+    assert resultado.magnitude == "grande"
