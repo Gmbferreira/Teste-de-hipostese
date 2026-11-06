@@ -17,7 +17,14 @@ RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
-from src.dados_reais import analisar, tabela_dados_reais, texto_dados_reais  # noqa: E402
+from src.dados_reais import (  # noqa: E402
+    analisar,
+    carregar_poder_por_tamanho,
+    tabela_dados_reais,
+    tabela_tamanho_amostra,
+    texto_dados_reais,
+    texto_tamanho_amostra,
+)
 from src.exemplo import gerar_exemplo, interpretacao, pr_mais_lento, tabela_resultados  # noqa: E402
 from src.formatacao import numero, p_valor, porcentagem  # noqa: E402
 from src.grafico_g1 import grafico_g1  # noqa: E402
@@ -231,6 +238,16 @@ st.caption(
     "A última linha é só referência: o Welch aplicado ao log do tempo, a situação em que "
     "ele ficou perto de 5% nas simulações. A diferença típica do Mann-Whitney é a "
     "mediana das diferenças entre todos os pares (estimador de Hodges-Lehmann)."
+)
+
+st.markdown("**Para discutir: poder com o tamanho da amostra**")
+poder_por_n = carregar_poder_por_tamanho()
+st.markdown(texto_tamanho_amostra(poder_por_n, resultado_real))
+st.table(tabela_tamanho_amostra(poder_por_n).set_index("Modelo dos dados"))
+st.caption(
+    "Poder estimado com 10.000 conjuntos simulados por ponto, no efeito observado nos "
+    "dados reais. O número de PRs para 80% é interpolado entre os tamanhos simulados "
+    "(35 a 400 por grupo)."
 )
 
 # ---------------------------------------------------------------------------

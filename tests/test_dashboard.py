@@ -91,10 +91,16 @@ def test_secao_4_mostra_o_erro_tipo_i_e_troca_o_alpha() -> None:
 
 def test_secao_6_mostra_os_testes_nos_dados_reais() -> None:
     """Seção 6 (issue #22): texto e tabela com os dois testes nos dados coletados."""
-    from src.dados_reais import analisar, texto_dados_reais
+    from src.dados_reais import (
+        analisar,
+        carregar_poder_por_tamanho,
+        texto_dados_reais,
+        texto_tamanho_amostra,
+    )
 
     app = _rodar()
     assert not app.exception
     textos = [m.value for m in app.markdown]
     assert texto_dados_reais(analisar()) in textos
+    assert texto_tamanho_amostra(carregar_poder_por_tamanho(), analisar()) in textos
     assert len(app.table) + len(app.dataframe) >= 3

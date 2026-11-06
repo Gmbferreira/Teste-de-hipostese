@@ -11,10 +11,16 @@ import pytest
 
 from src.dados_reais import (
     DADOS,
+    SAIDA_PODER_TAMANHO,
     analisar,
     carregar_grupos,
+    carregar_poder_por_tamanho,
+    n_para_poder,
+    poder_por_tamanho,
     tabela_dados_reais,
+    tabela_tamanho_amostra,
     texto_dados_reais,
+    texto_tamanho_amostra,
 )
 from src.formatacao import p_valor
 from src.testes_estatisticos import aplicar_mann_whitney, aplicar_welch
@@ -79,3 +85,36 @@ def test_texto_usa_a_escala_de_vargha_e_delaney(resultado) -> None:
     texto = texto_dados_reais(resultado)
     assert f"o efeito é {resultado.mann_whitney.magnitude}" in texto
     assert "Vargha e Delaney" in texto
+
+
+def test_n_para_poder_interpola_entre_os_tamanhos() -> None:
+    tabela = pd.DataFrame(
+        {
+            "modelo": ["m"] * 3, "teste": ["welch"] * 3,
+            "n_por_grupo": [35, 50, 70], "taxa": [0.5, 0.7, 0.9],
+        }
+    )
+    assert math.isclose(n_para_poder(tabela, "m", "welch"), 60.0)
+    assert n_para_poder(tabela, "m", "welch", alvo=0.95) is None
+    assert n_para_poder(tabela, "m", "welch", alvo=0.4) == 35.0
+
+
+def test_csv_do_poder_por_tamanho_esta_em_dia() -> None:
+    """Confere só os tamanhos baratos. Se falhar, rode `python -m src.dados_reais`."""
+    salvo = pd.read_csv(SAIDA_PODER_TAMANHO)
+    assert set(salvo["n_por_grupo"]) >= {35, 50, 70, 100}
+    assert set(salvo["modelo"]) == {"lognormal", "reamostragem"}
+    recalculado = poder_por_tamanho(tamanhos=(35, 50))
+    parte = salvo[salvo["n_por_grupo"].isin([35, 50])].reset_index(drop=True)
+    pd.testing.assert_frame_equal(
+        parte, recalculado.round(6), check_dtype=False, check_exact=False, atol=1e-6
+    )
+
+
+def test_tabela_e_texto_do_tamanho_da_amostra(resultado) -> None:
+    tabela = carregar_poder_por_tamanho()
+    resumo = tabela_tamanho_amostra(tabela)
+    assert len(resumo) == 2
+    texto = texto_tamanho_amostra(tabela, resultado)
+    assert 2 <= len(re.findall(r"[.](?:\s|$)", texto)) <= 4
+    assert "80%" in texto and "35 PRs por grupo" in texto
