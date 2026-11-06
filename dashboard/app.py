@@ -21,7 +21,7 @@ from src.dados_reais import analisar, tabela_dados_reais, texto_dados_reais  # n
 from src.exemplo import gerar_exemplo, interpretacao, pr_mais_lento, tabela_resultados  # noqa: E402
 from src.formatacao import numero, p_valor, porcentagem  # noqa: E402
 from src.grafico_g1 import grafico_g1  # noqa: E402
-from src.grafico_g2 import grafico_g2  # noqa: E402
+from src.grafico_g2 import estatisticas_sob_h0, grafico_g2  # noqa: E402
 from src.grafico_g3 import grafico_g3  # noqa: E402
 from src.monte_carlo import simular, tabela_rejeicoes  # noqa: E402
 from src.situacoes import POR_CHAVE, TODAS_AS_SITUACOES  # noqa: E402
@@ -109,24 +109,34 @@ def texto_como_os_testes_funcionam(exemplo) -> str:
         "O **t de Welch** compara as médias dos dois grupos, e o **Mann-Whitney** "
         "compara os postos, isto é, se os PRs com bot tendem a ficar no fim quando os "
         f"{total} tempos são colocados em ordem. Como o teste é bicaudal, a região de "
-        "rejeição (faixa cinza) fica nas duas pontas da distribuição de cada estatística "
-        f"sob H₀ e soma 5%: |t| > {numero(w.t_critico)} no Welch e "
-        f"U ≤ {numero(inferior, 0)} ou U ≥ {numero(superior, 0)} no Mann-Whitney. "
-        "O p-valor é a área pintada: a chance de, sem efeito nenhum, sair uma "
-        "estatística tão afastada do centro quanto a do exemplo, e não a chance de H₀ "
-        f"ser verdadeira. No exemplo, {cenario}, {resultado(m, 'Mann-Whitney')} e "
+        "rejeição (faixa cinza) fica nas duas pontas e reúne no máximo 5% dos valores "
+        f"sob H₀ (|t| > {numero(w.t_critico)}; U ≤ {numero(inferior, 0)} ou "
+        f"U ≥ {numero(superior, 0)}), e o p-valor do exemplo é a área pintada: a chance "
+        "de sair uma estatística tão extrema sem efeito nenhum, e não a chance de H₀ ser "
+        "verdadeira. As barras mostram a estatística em 10.000 conjuntos simulados sem "
+        "efeito: no Mann-Whitney elas seguem a curva exata, mas no Welch formam dois "
+        "picos perto de ±1 e quase não chegam às pontas, porque um PR muito lento pesa "
+        "na média e no desvio-padrão ao mesmo tempo, e por isso o Welch rejeita menos de "
+        f"5% no G3. No exemplo, {cenario}, {resultado(m, 'Mann-Whitney')} e "
         f"{resultado(w, 'Welch')}{motivo}."
     )
+
+
+@st.cache_resource(show_spinner="Simulando 10.000 conjuntos com H₀ verdadeira...")
+def estatisticas_do_g2():
+    """t e U em 10.000 conjuntos sem efeito, para as barras do G2."""
+    return estatisticas_sob_h0()
 
 
 exemplo = gerar_exemplo()
 st.markdown(texto_como_os_testes_funcionam(exemplo))
 
 st.pyplot(
-    grafico_g2(exemplo),
+    grafico_g2(exemplo, estatisticas_do_g2()),
     alt=(
         "G2: distribuição t de Welch e distribuição exata de U de Mann-Whitney sob H₀, "
-        "com a região de rejeição em cinza e o p-valor do exemplo como área pintada."
+        "com barras da estatística em 10.000 conjuntos simulados sem efeito, a região "
+        "de rejeição em cinza e o p-valor do exemplo como área pintada."
     ),
 )
 
