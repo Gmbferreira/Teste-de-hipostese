@@ -111,6 +111,24 @@ em [`docs/situacoes_q3.md`](docs/situacoes_q3.md). O dashboard também roda essa
 simulações sozinho na primeira vez que abre (leva alguns segundos) e guarda o
 resultado em cache.
 
+Além das quatro situações de Q3 registradas na expectativa, o segundo comando
+roda uma análise de sensibilidade incluída depois: a reamostragem dos tempos
+reais. A lognormal ajustada gera PRs bem mais lentos que os da amostra, e essa
+situação mostra o que muda quando a cauda é a dos dados coletados.
+
+Para regenerar o poder de cada teste no efeito observado, por tamanho de grupo
+(usado na discussão da seção 6):
+
+```bash
+python -m src.dados_reais
+```
+
+Ele grava `resultados/poder_tamanho_amostra.csv` e leva perto de um minuto, por
+causa dos grupos de até 400 PRs. O dashboard lê esse arquivo.
+
+O rascunho da divisão das perguntas da apresentação está em
+[`docs/apresentacao.md`](docs/apresentacao.md).
+
 ## Testes
 
 ```bash
