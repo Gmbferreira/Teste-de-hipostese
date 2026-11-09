@@ -190,3 +190,4 @@ Entrega final:
 - [ ] #23 — Conclusão (seção 7)
 - [ ] #24 — Publicação do dashboard
 - [ ] #25 — Apresentação oral
+- [x] #26 — Visual do dashboard para a apresentação
