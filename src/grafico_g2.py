@@ -89,7 +89,9 @@ def _formatar_eixos(ax: Axes, casas_x: int, casas_y: int) -> None:
         ax.spines[lado].set_visible(False)
     for lado in ("left", "bottom"):
         ax.spines[lado].set_color(EIXO)
-    ax.tick_params(colors=TINTA_FRACA, labelsize=9)
+    ax.tick_params(colors=TINTA_FRACA, labelsize=11)
+    ax.xaxis.label.set_size(12)
+    ax.yaxis.label.set_size(12)
     ax.grid(axis="y", color=GRADE, linewidth=0.8)
     ax.set_axisbelow(True)
 
@@ -102,13 +104,14 @@ def _rotular_linha(ax: Axes, x: float, y: float, texto: str, *, direita: bool = 
         textcoords="offset points",
         ha="left" if direita else "right",
         va="top",
-        fontsize=9,
+        fontsize=11,
         color=TINTA,
     )
 
 
-def _legenda(ax: Axes, cor: str, *, curva: str, regiao: str, area: str, observado: str) -> None:
-    itens = [
+def _legenda(cor: str, *, curva: str, regiao: str, area: str, observado: str) -> list:
+    """Itens da legenda de um painel; a legenda fica no rodapé da figura."""
+    return [
         Line2D([], [], color=cor, linewidth=2, label=curva),
         Patch(
             facecolor=BARRAS_SIMULADAS,
@@ -120,17 +123,9 @@ def _legenda(ax: Axes, cor: str, *, curva: str, regiao: str, area: str, observad
         Patch(facecolor=cor, alpha=OPACIDADE_P_VALOR, edgecolor="none", label=area),
         Line2D([], [], color=TINTA, linewidth=1.4, label=observado),
     ]
-    ax.legend(
-        handles=itens,
-        loc="upper left",
-        bbox_to_anchor=(0.0, -0.16),
-        frameon=False,
-        fontsize=9,
-        labelcolor=TINTA_SECUNDARIA,
-    )
 
 
-def _painel_welch(ax: Axes, exemplo: Exemplo, t_simulados: np.ndarray) -> None:
+def _painel_welch(ax: Axes, exemplo: Exemplo, t_simulados: np.ndarray) -> list:
     w = exemplo.welch
     cor = CORES_TESTE["welch"]
     limite = max(4.5, abs(w.t) + 0.8)
@@ -159,13 +154,12 @@ def _painel_welch(ax: Axes, exemplo: Exemplo, t_simulados: np.ndarray) -> None:
     ax.set_xlim(-limite, limite)
     ax.set_ylim(0, topo)
     ax.set_title(
-        f"{ROTULOS_TESTE['welch']}: compara as médias", loc="left", fontsize=11, color=TINTA
+        f"{ROTULOS_TESTE['welch']}: compara as médias", loc="left", fontsize=13, color=TINTA
     )
     ax.set_xlabel("Estatística t (sem unidade)", color=TINTA_SECUNDARIA)
     ax.set_ylabel("Densidade de probabilidade", color=TINTA_SECUNDARIA)
     _formatar_eixos(ax, casas_x=0, casas_y=1)
-    _legenda(
-        ax,
+    return _legenda(
         cor,
         curva=f"Distribuição t com {numero(w.gl, 1)} graus de liberdade (usada pelo teste)",
         regiao=f"Região de rejeição: |t| > {numero(w.t_critico)}",
@@ -185,7 +179,7 @@ def _faixa_u(m: ResultadoMannWhitney) -> tuple[np.ndarray, np.ndarray, float, fl
     return u, 100 * pmf, inicio, fim  # probabilidade em %
 
 
-def _painel_mann_whitney(ax: Axes, exemplo: Exemplo, u_simulados: np.ndarray) -> None:
+def _painel_mann_whitney(ax: Axes, exemplo: Exemplo, u_simulados: np.ndarray) -> list:
     m = exemplo.mann_whitney
     cor = CORES_TESTE["mann_whitney"]
     u, probabilidade, inicio_x, fim_x = _faixa_u(m)
@@ -220,7 +214,7 @@ def _painel_mann_whitney(ax: Axes, exemplo: Exemplo, u_simulados: np.ndarray) ->
     ax.set_title(
         f"{ROTULOS_TESTE['mann_whitney']}: compara os postos",
         loc="left",
-        fontsize=11,
+        fontsize=13,
         color=TINTA,
     )
     ax.set_xlabel(
@@ -229,8 +223,7 @@ def _painel_mann_whitney(ax: Axes, exemplo: Exemplo, u_simulados: np.ndarray) ->
     )
     ax.set_ylabel("Probabilidade (%)", color=TINTA_SECUNDARIA)
     _formatar_eixos(ax, casas_x=0, casas_y=2)
-    _legenda(
-        ax,
+    return _legenda(
         cor,
         curva=f"Distribuição exata de U, {m.n_com} × {m.n_sem} PRs (usada pelo teste)",
         regiao=f"Região de rejeição: U ≤ {numero(inferior, 0)} ou U ≥ {numero(superior, 0)}",
@@ -286,14 +279,14 @@ def _painel_zoom(ax: Axes, exemplo: Exemplo) -> None:
         xytext=(0.76 if direita else 0.24, 0.6),
         textcoords="axes fraction",
         ha="center",
-        fontsize=9,
+        fontsize=10.5,
         color=TINTA,
         arrowprops={"arrowstyle": "-|>", "color": TINTA_SECUNDARIA, "linewidth": 1},
     )
 
     ax.set_xlim(inicio, fim)
     ax.set_ylim(0, topo)
-    ax.set_title("Zoom na cauda (a outra é igual)", loc="left", fontsize=11, color=TINTA)
+    ax.set_title("Zoom na cauda (a outra é igual)", loc="left", fontsize=13, color=TINTA)
     ax.set_xlabel("Estatística U (nº de pares)", color=TINTA_SECUNDARIA)
     ax.set_ylabel("Probabilidade (%)", color=TINTA_SECUNDARIA)
     _formatar_eixos(ax, casas_x=0, casas_y=3)
@@ -314,18 +307,30 @@ def grafico_g2(
 
     # Figure direto, sem pyplot: o Streamlit roda o script fora da thread
     # principal, e assim não há estado global nem janela para fechar.
-    fig = Figure(figsize=(14, 6.1), layout="constrained", facecolor="white")
+    fig = Figure(figsize=(14, 7.2), layout="constrained", facecolor="white")
     ax_welch, ax_mw, ax_zoom = fig.subplots(1, 3, width_ratios=[1, 1, 0.55])
-    _painel_welch(ax_welch, exemplo, simuladas["welch"])
-    _painel_mann_whitney(ax_mw, exemplo, simuladas["mann_whitney"])
+    itens_welch = _painel_welch(ax_welch, exemplo, simuladas["welch"])
+    itens_mw = _painel_mann_whitney(ax_mw, exemplo, simuladas["mann_whitney"])
     _painel_zoom(ax_zoom, exemplo)
+
+    # Uma legenda só, no rodapé: a coluna da esquerda é do Welch e a da direita
+    # do Mann-Whitney. Assim os painéis ficam com a largura toda.
+    fig.legend(
+        handles=itens_welch + itens_mw,
+        loc="outside lower center",
+        ncols=2,
+        frameon=False,
+        fontsize=11,
+        labelcolor=TINTA_SECUNDARIA,
+        columnspacing=3.0,
+    )
 
     fig.suptitle(
         "G2 — Distribuição da estatística de cada teste quando H₀ é verdadeira "
         f"(α = {porcentagem(exemplo.welch.alpha, 0)}, bicaudal)",
         x=0.01,
         ha="left",
-        fontsize=13,
+        fontsize=16,
         fontweight="bold",
         color=TINTA,
     )

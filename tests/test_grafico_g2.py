@@ -38,11 +38,12 @@ def test_g2_tem_titulo_eixos_e_legenda(simuladas) -> None:
         assert ax.get_title(loc="left")
         assert ax.get_xlabel()
         assert ax.get_ylabel()
-    for ax in (welch, mann_whitney):
-        textos = [t.get_text() for t in ax.get_legend().get_texts()]
-        assert any("Região de rejeição" in t for t in textos)
-        assert any("p-valor" in t for t in textos)
-        assert any("conjuntos simulados com H₀ verdadeira" in t for t in textos)
+    # Uma legenda só, no rodapé, com uma coluna para cada teste.
+    textos = [t.get_text() for t in fig.legends[0].get_texts()]
+    assert any("Região de rejeição: |t|" in t for t in textos)
+    assert any("Região de rejeição: U" in t for t in textos)
+    assert sum("p-valor do exemplo" in t for t in textos) == 2
+    assert sum("conjuntos simulados com H₀ verdadeira" in t for t in textos) == 2
 
 
 def test_g2_usa_a_cor_de_cada_teste(simuladas) -> None:

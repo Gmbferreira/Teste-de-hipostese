@@ -64,7 +64,7 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
     chaves = [s.chave for s in TODAS_AS_SITUACOES if s.chave in set(tabela["situacao"])]
     posicao = {chave: len(chaves) - 1 - i for i, chave in enumerate(chaves)}  # de cima para baixo
 
-    fig = Figure(figsize=(10, 6.9), layout="constrained", facecolor="white")
+    fig = Figure(figsize=(11, 7.8), layout="constrained", facecolor="white")
     ax: Axes = fig.subplots()
 
     ax.axvspan(100 * (alpha - margem), 100 * (alpha + margem), color=FAIXA_ACASO, linewidth=0, zorder=0)
@@ -100,7 +100,7 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
                     textcoords="offset points",
                     ha="center",
                     va="bottom",
-                    fontsize=9,
+                    fontsize=11,
                     color=TINTA,
                 )
 
@@ -125,8 +125,9 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
     for lado in ("top", "right", "left"):
         ax.spines[lado].set_visible(False)
     ax.spines["bottom"].set_color(EIXO)
-    ax.tick_params(axis="x", colors=TINTA_FRACA, labelsize=9)
-    ax.tick_params(axis="y", colors=TINTA_SECUNDARIA, labelsize=10, length=0)
+    ax.tick_params(axis="x", colors=TINTA_FRACA, labelsize=11)
+    ax.tick_params(axis="y", colors=TINTA_SECUNDARIA, labelsize=12, length=0)
+    ax.xaxis.label.set_size(12)
     ax.grid(axis="x", color=GRADE, linewidth=0.8)
     ax.set_axisbelow(True)
 
@@ -149,14 +150,14 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
         bbox_to_anchor=(0.0, -0.13),
         ncol=2,
         frameon=False,
-        fontsize=9,
+        fontsize=11,
         labelcolor=TINTA_SECUNDARIA,
     )
     ax.set_title(
         "Primeira linha: Q1 (situação realista). Depois: situações de Q3. Última: "
         "sensibilidade com a cauda real, incluída depois de simular.",
         loc="left",
-        fontsize=10,
+        fontsize=11.5,
         color=TINTA_SECUNDARIA,
     )
     fig.suptitle(
@@ -164,7 +165,7 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
         f"(α = {porcentagem(alpha, 0)}, {numero(repeticoes, 0)} repetições)",
         x=0.01,
         ha="left",
-        fontsize=13,
+        fontsize=16,
         fontweight="bold",
         color=TINTA,
     )
