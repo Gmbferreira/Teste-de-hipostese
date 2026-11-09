@@ -122,12 +122,14 @@ def grafico_g3(tabela: pd.DataFrame | None = None, alpha: float | None = None) -
         "Erro tipo I: % dos conjuntos com H₀ verdadeira em que o teste rejeitou H₀",
         color=TINTA_SECUNDARIA,
     )
+    ax.set_ylabel("Situação simulada (PRs com bot × PRs sem bot)", color=TINTA_SECUNDARIA)
     for lado in ("top", "right", "left"):
         ax.spines[lado].set_visible(False)
     ax.spines["bottom"].set_color(EIXO)
     ax.tick_params(axis="x", colors=TINTA_FRACA, labelsize=11)
     ax.tick_params(axis="y", colors=TINTA_SECUNDARIA, labelsize=12, length=0)
     ax.xaxis.label.set_size(12)
+    ax.yaxis.label.set_size(12)
     ax.grid(axis="x", color=GRADE, linewidth=0.8)
     ax.set_axisbelow(True)
 

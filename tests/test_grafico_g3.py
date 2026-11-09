@@ -28,6 +28,8 @@ def test_g3_tem_titulo_eixo_e_legenda(tabela: pd.DataFrame) -> None:
     ax = fig.axes[0]
     assert "G3" in fig.get_suptitle()
     assert "Erro tipo I" in ax.get_xlabel() and "%" in ax.get_xlabel()
+    # O enunciado pede nome nos dois eixos; o vertical é o das situações.
+    assert "Situação simulada" in ax.get_ylabel() and "PRs" in ax.get_ylabel()
     textos = [t.get_text() for t in ax.get_legend().get_texts()]
     assert any("t de Welch" in t for t in textos)
     assert any("Mann-Whitney" in t for t in textos)
