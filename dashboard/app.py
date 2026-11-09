@@ -1,7 +1,8 @@
 """Dashboard do Laboratório 04 — Testes de Hipótese.
 
-As 7 seções seguem a ordem oficial. As seções 1 e 2 foram integradas na
-issue #7; as demais são preenchidas pelas issues #12, #13 e Sprint 02.
+As 7 seções seguem a ordem oficial do enunciado. O visual (abertura, números do
+estudo, navegação e cartões das seções) fica em dashboard/layout.py, da issue
+#26; o conteúdo de cada seção continua vindo das issues de cada uma.
 """
 
 import math
@@ -17,7 +18,19 @@ RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
+from dashboard.layout import (  # noqa: E402
+    Numero,
+    Secao,
+    abertura,
+    aplicar_estilo,
+    navegacao,
+    numeros_do_estudo,
+    rodape,
+    secao,
+)
+from src.config import ALPHA, N_SIMULACOES, SEED  # noqa: E402
 from src.dados_reais import (  # noqa: E402
+    DADOS,
     analisar,
     carregar_poder_por_tamanho,
     tabela_dados_reais,
@@ -31,6 +44,7 @@ from src.grafico_g1 import grafico_g1  # noqa: E402
 from src.grafico_g2 import estatisticas_sob_h0, grafico_g2  # noqa: E402
 from src.grafico_g3 import grafico_g3  # noqa: E402
 from src.monte_carlo import simular, tabela_rejeicoes  # noqa: E402
+from src.parametros import DELTA_MU_OBSERVADO, RAZAO_GEOMETRICA_OBSERVADA  # noqa: E402
 from src.situacoes import POR_CHAVE, TODAS_AS_SITUACOES  # noqa: E402
 from src.textos import texto_cenario, texto_dados, texto_erro_tipo_i  # noqa: E402
 
@@ -39,53 +53,42 @@ PROJECTS_URL = "https://github.com/users/Gmbferreira/projects/4"
 DASHBOARD_URL: str | None = None  # preencher quando o dashboard for publicado
 
 st.set_page_config(
-    page_title="Testes de Hipótese — Tempo até o merge de PRs",
+    page_title="Bot de revisão × tempo até o merge",
     page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
+aplicar_estilo()
 
-# ---------------------------------------------------------------------------
-# Cabeçalho
-# ---------------------------------------------------------------------------
-st.title("Testes de Hipótese — Tempo até o merge de PRs")
-
-dashboard_link = f"[Dashboard]({DASHBOARD_URL})" if DASHBOARD_URL else "**Dashboard:** em breve"
-st.markdown(
-    f"[Repositório]({REPOSITORIO_URL}) · "
-    f"[GitHub Projects]({PROJECTS_URL}) · "
-    f"{dashboard_link}"
-)
-
-st.caption(
-    "Par de testes: **t de Welch × Mann-Whitney** · "
-    "Cenário: tempo até o merge de pull requests com e sem bot de revisão."
-)
-
-st.divider()
-
-# ---------------------------------------------------------------------------
-# 1. Cenário (issue #7)
-# ---------------------------------------------------------------------------
-st.header("1. Cenário")
-st.markdown(texto_cenario())
-
-# ---------------------------------------------------------------------------
-# 2. Os dados (issue #7)
-# ---------------------------------------------------------------------------
-st.header("2. Os dados")
-st.markdown(texto_dados())
-st.pyplot(
-    grafico_g1(),
-    alt=(
-        "G1: histogramas do tempo até o merge dos grupos com e sem bot, "
-        "em dados reais e simulados, em escala logarítmica."
+SECOES = [
+    Secao(1, "Cenário", "A pergunta, as hipóteses de cada teste e o que seria errar para cada lado.", (1, 2, 8)),
+    Secao(2, "Os dados", "Como são os tempos reais e os simulados, e de onde vieram os parâmetros (G1).", (3, 4)),
+    Secao(
+        3,
+        "Como os testes funcionam",
+        "A distribuição de cada estatística quando H₀ é verdadeira, num conjunto simulado (G2).",
+        (5, 6, 7),
     ),
-)
+    Secao(4, "Erro tipo I", "Com que frequência cada teste acusa um efeito que não existe (G3).", (9, 11, 12)),
+    Secao(5, "Poder", "Com que frequência cada teste detecta um efeito que existe (G4).", (10, 12)),
+    Secao(6, "Dados reais", "Os dois testes nos 70 PRs coletados, com o tamanho do efeito.", (14,)),
+    Secao(7, "Conclusão", "O que esperávamos, o que encontramos e qual teste recomendamos.", (13, 15)),
+]
+
 
 # ---------------------------------------------------------------------------
-# 3. Como os testes funcionam (issues #11, #12 e #13)
+# Simulações guardadas em cache e textos montados a partir dos resultados
 # ---------------------------------------------------------------------------
-st.header("3. Como os testes funcionam")
+@st.cache_resource(show_spinner="Simulando 10.000 conjuntos com H₀ verdadeira...")
+def estatisticas_do_g2():
+    """t e U em 10.000 conjuntos sem efeito, para as barras do G2."""
+    return estatisticas_sob_h0()
+
+
+@st.cache_resource(show_spinner="Rodando 10.000 conjuntos com H₀ verdadeira em cada situação...")
+def simulacoes_com_h0():
+    """P-valores dos dois testes com δ = 0 na situação realista (Q1) e nas de Q3."""
+    return [simular(situacao, 0.0) for situacao in TODAS_AS_SITUACOES]
 
 
 def texto_como_os_testes_funcionam(exemplo) -> str:
@@ -129,41 +132,6 @@ def texto_como_os_testes_funcionam(exemplo) -> str:
     )
 
 
-@st.cache_resource(show_spinner="Simulando 10.000 conjuntos com H₀ verdadeira...")
-def estatisticas_do_g2():
-    """t e U em 10.000 conjuntos sem efeito, para as barras do G2."""
-    return estatisticas_sob_h0()
-
-
-exemplo = gerar_exemplo()
-st.markdown(texto_como_os_testes_funcionam(exemplo))
-
-st.pyplot(
-    grafico_g2(exemplo, estatisticas_do_g2()),
-    alt=(
-        "G2: distribuição t de Welch e distribuição exata de U de Mann-Whitney sob H₀, "
-        "com barras da estatística em 10.000 conjuntos simulados sem efeito, a região "
-        "de rejeição em cinza e o p-valor do exemplo como área pintada."
-    ),
-)
-
-st.markdown("**Resultado dos dois testes no conjunto de exemplo**")
-st.table(tabela_resultados(exemplo).set_index("Teste"))
-with st.expander("Interpretação completa do exemplo"):
-    st.markdown(interpretacao(exemplo))
-
-# ---------------------------------------------------------------------------
-# 4. Erro tipo I (issues #14, #16, #18 e #19)
-# ---------------------------------------------------------------------------
-st.header("4. Erro tipo I")
-
-
-@st.cache_resource(show_spinner="Rodando 10.000 conjuntos com H₀ verdadeira em cada situação...")
-def simulacoes_com_h0():
-    """P-valores dos dois testes com δ = 0 na situação realista (Q1) e nas de Q3."""
-    return [simular(situacao, 0.0) for situacao in TODAS_AS_SITUACOES]
-
-
 def tabela_erro_tipo_i_para_exibir(tabela):
     """Uma linha por situação, com a taxa e o IC de 95% de cada teste."""
     linhas = []
@@ -179,88 +147,232 @@ def tabela_erro_tipo_i_para_exibir(tabela):
     return linhas
 
 
-alpha_g3 = st.radio(
-    "Nível de significância (α)",
-    options=[0.05, 0.01],
-    format_func=lambda a: porcentagem(a, 0),
-    horizontal=True,
-    key="alpha_erro_tipo_i",
-    help="Com 1% a região de rejeição encolhe; compare as duas opções no G3.",
-)
-tabela_g3 = tabela_rejeicoes(simulacoes_com_h0(), alpha_g3)
-st.markdown(texto_erro_tipo_i(tabela_g3))
-st.pyplot(
-    grafico_g3(tabela_g3),
-    alt=(
-        "G3: erro tipo I do t de Welch e do Mann-Whitney em cada situação simulada, "
-        "com intervalo de 95% e uma linha vertical em α."
+def numeros_principais(resultado_real, poder_por_n) -> list[Numero]:
+    """Os números do topo, todos calculados a partir dos dados e das simulações."""
+    dados = pd.read_csv(DADOS)
+    datas = pd.to_datetime(dados["mergeado_em"])
+    n_com = int((dados["grupo"] == "com_bot").sum())
+    n_sem = int((dados["grupo"] == "sem_bot").sum())
+
+    realista = simulacoes_com_h0()[0]
+    tipo_i = {t: realista.proporcao(t, ALPHA).taxa for t in ("welch", "mann_whitney")}
+
+    em_35 = poder_por_n[(poder_por_n["modelo"] == "lognormal") & (poder_por_n["n_por_grupo"] == 35)]
+    poder = em_35.set_index("teste")["taxa"]
+
+    w, m = resultado_real.welch, resultado_real.mann_whitney
+    rejeitaram = [nome for nome, r in (("t de Welch", w), ("Mann-Whitney", m)) if r.rejeita_h0]
+    if len(rejeitaram) == 1:
+        nota_real = f"Só o {rejeitaram[0]} rejeitou H₀ com α = {porcentagem(ALPHA, 0)}."
+    elif rejeitaram:
+        nota_real = f"Os dois rejeitaram H₀ com α = {porcentagem(ALPHA, 0)}."
+    else:
+        nota_real = f"Nenhum rejeitou H₀ com α = {porcentagem(ALPHA, 0)}."
+
+    return [
+        Numero(
+            rotulo="Amostra real",
+            valor=f"{n_com + n_sem} PRs",
+            nota=(
+                f"{n_com} com review do CodeRabbit e {n_sem} sem, mergeados entre "
+                f"{datas.min():%d/%m} e {datas.max():%d/%m/%Y}."
+            ),
+        ),
+        Numero(
+            rotulo="Efeito observado",
+            valor=f"{numero(RAZAO_GEOMETRICA_OBSERVADA, 1)}×",
+            nota=(
+                "PRs com bot mais lentos, pela média geométrica "
+                f"(δ = {numero(DELTA_MU_OBSERVADO)})."
+            ),
+        ),
+        Numero(
+            rotulo="Erro tipo I",
+            por_teste=(
+                ("welch", porcentagem(tipo_i["welch"], 1)),
+                ("mann_whitney", porcentagem(tipo_i["mann_whitney"], 1)),
+            ),
+            nota=f"Situação realista, sem efeito. O esperado é {porcentagem(ALPHA, 0)}.",
+        ),
+        Numero(
+            rotulo="Poder com 35 por grupo",
+            por_teste=(
+                ("welch", porcentagem(poder["welch"], 0)),
+                ("mann_whitney", porcentagem(poder["mann_whitney"], 0)),
+            ),
+            nota="No efeito observado, com o modelo lognormal.",
+        ),
+        Numero(
+            rotulo="Nos dados reais",
+            por_teste=(
+                ("welch", f"p = {p_valor(w.p_valor)}"),
+                ("mann_whitney", f"p = {p_valor(m.p_valor)}"),
+            ),
+            nota=nota_real,
+        ),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Barra lateral, abertura e números do estudo (issue #26)
+# ---------------------------------------------------------------------------
+resultado_real = analisar()
+poder_por_n = carregar_poder_por_tamanho()
+
+navegacao(
+    SECOES,
+    rodape=(
+        f"Semente {SEED} · {numero(N_SIMULACOES, 0)} repetições por ponto · "
+        f"α = {porcentagem(ALPHA, 0)}, bicaudal"
     ),
 )
-st.markdown(
-    f"**Erro tipo I com α = {porcentagem(alpha_g3, 0)}** "
-    "(10.000 conjuntos por situação, intervalo de 95% entre parênteses)"
+
+abertura(
+    chapeu="Laboratório 04 · Laboratório de Experimentação de Software",
+    titulo="O bot de revisão muda o tempo até o merge?",
+    texto=(
+        f"Comparamos o t de Welch e o Mann-Whitney em "
+        f"{len(resultado_real.com_bot) + len(resultado_real.sem_bot)} pull requests reais "
+        "do supabase/supabase e em conjuntos simulados em que sabemos a resposta certa, "
+        "para ver quantas vezes cada teste acerta e erra."
+    ),
+    etiquetas=[
+        "Par P1: t de Welch × Mann-Whitney",
+        f"α = {porcentagem(ALPHA, 0)}, bicaudal",
+        f"{numero(N_SIMULACOES, 0)} repetições por ponto",
+        f"Semente {SEED}",
+    ],
+    links=[
+        ("Repositório", REPOSITORIO_URL),
+        ("GitHub Projects", PROJECTS_URL),
+        ("Dashboard publicado", DASHBOARD_URL),
+    ],
 )
-st.table(pd.DataFrame(tabela_erro_tipo_i_para_exibir(tabela_g3)).set_index("Situação"))
-with st.expander("Como cada situação foi simulada"):
-    st.markdown(
-        "| Situação | O que muda | Por que incluímos |\n|---|---|---|\n"
-        + "\n".join(
-            f"| {s.nome} | {s.descricao} | {s.motivo} |" for s in TODAS_AS_SITUACOES
-        )
-        + "\n\nTodas as situações usam a mesma semente, então os sorteios de base são "
-        "os mesmos e a diferença entre elas vem só do que foi alterado. As quatro "
-        "situações de Q3 foram registradas na expectativa antes de simular. A "
-        "reamostragem dos tempos reais entrou depois, como análise de sensibilidade: "
-        "a lognormal ajustada gera PRs bem mais lentos que os da amostra, e essa "
-        "situação mostra o que muda com a cauda real."
+numeros_do_estudo("O estudo em números", numeros_principais(resultado_real, poder_por_n))
+
+# ---------------------------------------------------------------------------
+# 1. Cenário (issue #7)
+# ---------------------------------------------------------------------------
+with secao(SECOES[0]):
+    st.markdown(texto_cenario())
+
+# ---------------------------------------------------------------------------
+# 2. Os dados (issue #7)
+# ---------------------------------------------------------------------------
+with secao(SECOES[1]):
+    st.markdown(texto_dados())
+    st.pyplot(
+        grafico_g1(),
+        alt=(
+            "G1: histogramas do tempo até o merge dos grupos com e sem bot, "
+            "em dados reais e simulados, em escala logarítmica."
+        ),
     )
+
+# ---------------------------------------------------------------------------
+# 3. Como os testes funcionam (issues #11, #12 e #13)
+# ---------------------------------------------------------------------------
+with secao(SECOES[2]):
+    exemplo = gerar_exemplo()
+    st.markdown(texto_como_os_testes_funcionam(exemplo))
+
+    st.pyplot(
+        grafico_g2(exemplo, estatisticas_do_g2()),
+        alt=(
+            "G2: distribuição t de Welch e distribuição exata de U de Mann-Whitney sob H₀, "
+            "com barras da estatística em 10.000 conjuntos simulados sem efeito, a região "
+            "de rejeição em cinza e o p-valor do exemplo como área pintada."
+        ),
+    )
+
+    st.markdown("**Resultado dos dois testes no conjunto de exemplo**")
+    st.table(tabela_resultados(exemplo).set_index("Teste"))
+    with st.expander("Interpretação completa do exemplo"):
+        st.markdown(interpretacao(exemplo))
+
+# ---------------------------------------------------------------------------
+# 4. Erro tipo I (issues #14, #16, #18 e #19)
+# ---------------------------------------------------------------------------
+with secao(SECOES[3]):
+    alpha_g3 = st.radio(
+        "Nível de significância (α)",
+        options=[0.05, 0.01],
+        format_func=lambda a: porcentagem(a, 0),
+        horizontal=True,
+        key="alpha_erro_tipo_i",
+        help="Com 1% a região de rejeição encolhe; compare as duas opções no G3.",
+    )
+    tabela_g3 = tabela_rejeicoes(simulacoes_com_h0(), alpha_g3)
+    st.markdown(texto_erro_tipo_i(tabela_g3))
+    st.pyplot(
+        grafico_g3(tabela_g3),
+        alt=(
+            "G3: erro tipo I do t de Welch e do Mann-Whitney em cada situação simulada, "
+            "com intervalo de 95% e uma linha vertical em α."
+        ),
+    )
+    st.markdown(
+        f"**Erro tipo I com α = {porcentagem(alpha_g3, 0)}** "
+        "(10.000 conjuntos por situação, intervalo de 95% entre parênteses)"
+    )
+    st.table(pd.DataFrame(tabela_erro_tipo_i_para_exibir(tabela_g3)).set_index("Situação"))
+    with st.expander("Como cada situação foi simulada"):
+        st.markdown(
+            "| Situação | O que muda | Por que incluímos |\n|---|---|---|\n"
+            + "\n".join(
+                f"| {s.nome} | {s.descricao} | {s.motivo} |" for s in TODAS_AS_SITUACOES
+            )
+            + "\n\nTodas as situações usam a mesma semente, então os sorteios de base são "
+            "os mesmos e a diferença entre elas vem só do que foi alterado. As quatro "
+            "situações de Q3 foram registradas na expectativa antes de simular. A "
+            "reamostragem dos tempos reais entrou depois, como análise de sensibilidade: "
+            "a lognormal ajustada gera PRs bem mais lentos que os da amostra, e essa "
+            "situação mostra o que muda com a cauda real."
+        )
 
 # ---------------------------------------------------------------------------
 # 5. Poder
 # ---------------------------------------------------------------------------
-st.header("5. Poder")
-st.info(
-    "Em construção — Sprint 02: simulações de Q2 e Q3 e gráfico G4."
-)
+with secao(SECOES[4]):
+    st.info(
+        "Em construção — Sprint 02: simulações de Q2 e Q3 e gráfico G4."
+    )
 
 # ---------------------------------------------------------------------------
 # 6. Dados reais (issue #22)
 # ---------------------------------------------------------------------------
-st.header("6. Dados reais")
-resultado_real = analisar()
-st.markdown(texto_dados_reais(resultado_real))
-st.markdown(
-    "**Os dois testes nos dados coletados** "
-    "(35 PRs com bot e 35 sem bot do `supabase/supabase`, α = 5% bicaudal)"
-)
-st.table(tabela_dados_reais(resultado_real).set_index("Teste"))
-st.caption(
-    "A última linha é só referência: o Welch aplicado ao log do tempo, a situação em que "
-    "ele ficou perto de 5% nas simulações. A diferença típica do Mann-Whitney é a "
-    "mediana das diferenças entre todos os pares (estimador de Hodges-Lehmann)."
-)
+with secao(SECOES[5]):
+    st.markdown(texto_dados_reais(resultado_real))
+    st.markdown(
+        "**Os dois testes nos dados coletados** "
+        "(35 PRs com bot e 35 sem bot do `supabase/supabase`, α = 5% bicaudal)"
+    )
+    st.table(tabela_dados_reais(resultado_real).set_index("Teste"))
+    st.caption(
+        "A última linha é só referência: o Welch aplicado ao log do tempo, a situação em "
+        "que ele ficou perto de 5% nas simulações. A diferença típica do Mann-Whitney é a "
+        "mediana das diferenças entre todos os pares (estimador de Hodges-Lehmann)."
+    )
 
-st.markdown("**Para discutir: poder com o tamanho da amostra**")
-poder_por_n = carregar_poder_por_tamanho()
-st.markdown(texto_tamanho_amostra(poder_por_n, resultado_real))
-st.table(tabela_tamanho_amostra(poder_por_n).set_index("Modelo dos dados"))
-st.caption(
-    "Poder estimado com 10.000 conjuntos simulados por ponto, no efeito observado nos "
-    "dados reais. O número de PRs para 80% é interpolado entre os tamanhos simulados "
-    "(35 a 400 por grupo)."
-)
+    st.markdown("**Para discutir: poder com o tamanho da amostra**")
+    st.markdown(texto_tamanho_amostra(poder_por_n, resultado_real))
+    st.table(tabela_tamanho_amostra(poder_por_n).set_index("Modelo dos dados"))
+    st.caption(
+        "Poder estimado com 10.000 conjuntos simulados por ponto, no efeito observado nos "
+        "dados reais. O número de PRs para 80% é interpolado entre os tamanhos simulados "
+        "(35 a 400 por grupo)."
+    )
 
 # ---------------------------------------------------------------------------
 # 7. Conclusão
 # ---------------------------------------------------------------------------
-st.header("7. Conclusão")
-st.info(
-    "Em construção — Sprint 02: expectativa registrada na #10 × resultados "
-    "encontrados, com a recomendação final."
-)
+with secao(SECOES[6]):
+    st.info(
+        "Em construção — Sprint 02: expectativa registrada na #10 × resultados "
+        "encontrados, com a recomendação final."
+    )
 
-st.divider()
-st.caption(
-    "Laboratório de Experimentação de Software · Engenharia de Software · "
-    "Semente fixa: `42` (ver `src/config.py`)."
+rodape(
+    f"Laboratório de Experimentação de Software · Engenharia de Software · "
+    f"semente fixa {SEED} (src/config.py)"
 )

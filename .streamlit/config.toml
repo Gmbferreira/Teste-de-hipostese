@@ -1,0 +1,32 @@
+# Tema do dashboard (issue #26): fundo claro para combinar com as figuras,
+# letras maiores para projetor e um teal de destaque que não se confunde com o
+# azul do t de Welch nem com o laranja do Mann-Whitney.
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#0f766e"
+backgroundColor = "#f4f6f9"
+secondaryBackgroundColor = "#e9edf2"
+textColor = "#0f172a"
+linkColor = "#0f766e"
+linkUnderline = false
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap, sans-serif"
+baseFontSize = 17
+headingFontWeights = [800, 700, 700, 600, 600, 600]
+baseRadius = "0.75rem"
+borderColor = "#e3e7ee"
+dataframeBorderColor = "#e3e7ee"
+dataframeHeaderBackgroundColor = "#f1f4f8"
+dataframeHeaderTextColor = "#334155"
+showWidgetBorder = true
+
+[theme.sidebar]
+backgroundColor = "#0f172a"
+secondaryBackgroundColor = "#1e293b"
+textColor = "#e2e8f0"
+primaryColor = "#5eead4"
+linkColor = "#99f6e4"
+borderColor = "#334155"

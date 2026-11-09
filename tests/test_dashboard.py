@@ -104,3 +104,18 @@ def test_secao_6_mostra_os_testes_nos_dados_reais() -> None:
     assert texto_dados_reais(analisar()) in textos
     assert texto_tamanho_amostra(carregar_poder_por_tamanho(), analisar()) in textos
     assert len(app.table) + len(app.dataframe) >= 3
+
+
+def test_topo_tem_abertura_links_numeros_e_navegacao() -> None:
+    """Visual de apresentação (issue #26): links no topo, números e índice lateral."""
+    app = _rodar()
+    assert not app.exception
+    textos = " ".join(m.value for m in app.markdown)
+    assert "O bot de revisão muda o tempo até o merge?" in textos
+    assert "O estudo em números" in textos
+    # O enunciado pede os links do repositório e do GitHub Projects no topo.
+    assert "https://github.com/Gmbferreira/Teste-de-hipostese" in textos
+    assert "https://github.com/users/Gmbferreira/projects/4" in textos
+    lateral = " ".join(m.value for m in app.sidebar.markdown)
+    for numero in range(1, 8):
+        assert f'href="#secao-{numero}"' in lateral
