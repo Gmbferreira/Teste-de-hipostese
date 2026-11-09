@@ -24,7 +24,8 @@ definição dos erros tipo I e II estão em [`docs/cenario.md`](docs/cenario.md)
 
 ```
 .
-├── dashboard/        # dashboard Streamlit
+├── .streamlit/       # tema do dashboard (cores, fonte e tamanho para projetor)
+├── dashboard/        # dashboard Streamlit (app.py e o visual em layout.py)
 ├── data/             # amostra de dados reais (CSV) e sua documentação
 ├── docs/             # cenário, expectativa, análise exploratória e interpretações
 ├── resultados/       # taxas de rejeição das simulações de Q1–Q3 (CSV)
@@ -63,7 +64,10 @@ Um único comando, a partir da raiz do repositório:
 streamlit run dashboard/app.py
 ```
 
-O dashboard abre em <http://localhost:8501>.
+O dashboard abre em <http://localhost:8501>. Rode da raiz mesmo, porque é de
+lá que o Streamlit lê o tema em `.streamlit/config.toml`. O topo traz a pergunta,
+os links e os principais números do estudo, e a barra lateral leva a cada seção
+e mostra quais perguntas da apresentação ela responde.
 
 Para regenerar a análise exploratória e os parâmetros da simulação:
 
