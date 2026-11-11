@@ -121,6 +121,16 @@ roda uma análise de sensibilidade incluída depois: a reamostragem dos tempos
 reais. A lognormal ajustada gera PRs bem mais lentos que os da amostra, e essa
 situação mostra o que muda quando a cauda é a dos dados coletados.
 
+Para regenerar o gráfico G4 (curvas de poder dos dois testes, um painel por
+situação):
+
+```bash
+python -m src.grafico_g4
+```
+
+Ele atualiza `docs/figuras/g4_curvas_de_poder.png` com os mesmos resultados de
+`resultados/q2_poder.csv` e `resultados/q3_poder.csv`.
+
 Para regenerar o poder de cada teste no efeito observado, por tamanho de grupo
 (usado na discussão da seção 6):
 
@@ -182,7 +192,7 @@ Sprint 2:
 - [x] #16 — Situações que violam os pressupostos (Q3)
 - [x] #18 — Gráfico G3
 - [x] #19 — Integração do G3 no dashboard
-- [ ] #20 — Gráfico G4
+- [x] #20 — Gráfico G4
 - [ ] #21 — Integração do G4 no dashboard
 
 Entrega final:
