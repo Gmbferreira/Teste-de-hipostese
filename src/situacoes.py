@@ -33,9 +33,8 @@ from src.monte_carlo import (
     Situacao,
     erro_tipo_i,
     salvar_csv,
-    simular,
-    tabela_rejeicoes,
 )
+from src.monte_carlo import poder as poder_por_efeito
 from src.parametros import GRADE_DELTA_MU_SUGERIDA, GRUPO_CONTROLE
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -129,12 +128,7 @@ def poder_q3(
     alpha: float = ALPHA,
 ) -> pd.DataFrame:
     """Repete a Q2 (efeitos crescentes, começando em zero) nas mesmas situações."""
-    simulacoes = [
-        simular(situacao, delta, repeticoes, semente)
-        for situacao in SITUACOES_SIMULADAS
-        for delta in grade
-    ]
-    return tabela_rejeicoes(simulacoes, alpha)
+    return poder_por_efeito(SITUACOES_SIMULADAS, grade, repeticoes, semente, alpha)
 
 
 def _celula(linha: pd.Series) -> str:

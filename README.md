@@ -100,8 +100,8 @@ python -m src.grafico_g1
 Ele atualiza `docs/figuras/g1_dados_reais_simulados.png`. Os dados simulados
 usam o efeito observado, 35 PRs por grupo e a mesma semente do exemplo.
 
-Para regenerar as simulações de erro tipo I e de Q3 (10.000 repetições por
-ponto) e o gráfico G3:
+Para regenerar as simulações de erro tipo I, de poder e de Q3 (10.000
+repetições por ponto) e o gráfico G3:
 
 ```bash
 python -m src.monte_carlo
@@ -109,7 +109,8 @@ python -m src.situacoes
 python -m src.grafico_g3
 ```
 
-O primeiro grava a Q1 em `resultados/q1_erro_tipo_i.csv`. O segundo grava o
+O primeiro grava a Q1 em `resultados/q1_erro_tipo_i.csv` e a Q2 (poder na
+situação realista, com δ de 0 a 2) em `resultados/q2_poder.csv`. O segundo grava o
 erro tipo I e o poder das situações de Q3 em `resultados/` e a descrição delas
 em [`docs/situacoes_q3.md`](docs/situacoes_q3.md). O dashboard também roda essas
 simulações sozinho na primeira vez que abre (leva alguns segundos) e guarda o
@@ -177,7 +178,7 @@ Sprint 1:
 Sprint 2:
 
 - [x] #14 — Erro tipo I com H₀ verdadeira (Q1)
-- [ ] #15 — Poder dos testes (Q2)
+- [x] #15 — Poder dos testes (Q2)
 - [x] #16 — Situações que violam os pressupostos (Q3)
 - [x] #18 — Gráfico G3
 - [x] #19 — Integração do G3 no dashboard

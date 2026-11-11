@@ -1,9 +1,13 @@
-"""Motor das simulações de Q1–Q3 e erro tipo I da situação realista (issue #14).
+"""Motor das simulações de Q1–Q3, erro tipo I (issue #14) e poder (issue #15).
 
 Para uma situação (tamanho dos grupos, outliers, escala) e um tamanho de efeito,
 o motor gera os 10.000 conjuntos de uma vez, aplica os dois testes em todos e
 guarda os p-valores. A proporção de p-valores abaixo de α é o erro tipo I quando
 δ = 0 e o poder quando δ > 0.
+
+Este módulo grava a Q1 (δ = 0) e a Q2 (efeitos crescentes, começando em zero)
+da situação realista. As situações de Q3 ficam em src/situacoes.py e usam as
+mesmas funções.
 
 Todas as situações usam a mesma semente. Assim os sorteios de base são os
 mesmos em todas elas e a diferença entre duas situações vem só do que muda
@@ -25,11 +29,13 @@ import pandas as pd
 from scipy import stats
 
 from src.config import ALPHA, N_SIMULACOES, SEED, make_rng
+from src.parametros import GRADE_DELTA_MU_SUGERIDA
 from src.simulacao import N_POR_GRUPO, gerar_grupos
 
 RAIZ = Path(__file__).resolve().parent.parent
 PASTA_RESULTADOS = RAIZ / "resultados"
 SAIDA_Q1 = PASTA_RESULTADOS / "q1_erro_tipo_i.csv"
+SAIDA_Q2 = PASTA_RESULTADOS / "q2_poder.csv"
 
 TESTES = ("welch", "mann_whitney")
 Z_95 = 1.959963984540054  # quantil 97,5% da normal padrão
@@ -210,6 +216,27 @@ def erro_tipo_i(
     return tabela_rejeicoes(simulacoes, alpha)
 
 
+def poder(
+    situacoes: tuple[Situacao, ...] = (REALISTA,),
+    grade: tuple[float, ...] = GRADE_DELTA_MU_SUGERIDA,
+    repeticoes: int = N_SIMULACOES,
+    semente: int = SEED,
+    alpha: float = ALPHA,
+) -> pd.DataFrame:
+    """Q2: proporção de rejeições em cada tamanho de efeito da grade.
+
+    A grade começa em zero, então a primeira linha de cada situação é o próprio
+    erro tipo I. Todos os efeitos usam a mesma semente: o grupo sem bot é o mesmo
+    em toda a grade e só o efeito muda, o que deixa a curva de poder mais lisa.
+    """
+    simulacoes = [
+        simular(situacao, delta, repeticoes, semente)
+        for situacao in situacoes
+        for delta in grade
+    ]
+    return tabela_rejeicoes(simulacoes, alpha)
+
+
 def salvar_csv(tabela: pd.DataFrame, destino: Path) -> Path:
     destino.parent.mkdir(parents=True, exist_ok=True)
     tabela.to_csv(destino, index=False, float_format="%.6f", lineterminator="\n")
@@ -218,7 +245,8 @@ def salvar_csv(tabela: pd.DataFrame, destino: Path) -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--saida", type=Path, default=SAIDA_Q1)
+    parser.add_argument("--saida", type=Path, default=SAIDA_Q1, help="CSV da Q1")
+    parser.add_argument("--saida-poder", type=Path, default=SAIDA_Q2, help="CSV da Q2")
     args = parser.parse_args()
 
     tabela = erro_tipo_i()
@@ -229,6 +257,17 @@ def main() -> None:
             f"(IC 95%: {100 * linha.ic95_inferior:.2f}% a {100 * linha.ic95_superior:.2f}%)"
         )
     print(f"Resultado salvo em {args.saida}")
+
+    tabela_poder = poder()
+    salvar_csv(tabela_poder, args.saida_poder)
+    print("\nPoder na situação realista (proporção de rejeições):")
+    print(f"{'δ':>5}  {'welch':>8}  {'mann_whitney':>12}")
+    for delta, grupo in tabela_poder.groupby("delta_mu", sort=True):
+        taxa = grupo.set_index("teste")["taxa"]
+        print(
+            f"{delta:>5.2f}  {100 * taxa['welch']:>7.2f}%  {100 * taxa['mann_whitney']:>11.2f}%"
+        )
+    print(f"Resultado salvo em {args.saida_poder}")
 
 
 if __name__ == "__main__":

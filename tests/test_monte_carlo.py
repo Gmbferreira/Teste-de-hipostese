@@ -1,4 +1,4 @@
-"""Testes do motor de simulação e do erro tipo I da situação realista (issue #14)."""
+"""Testes do motor de simulação, do erro tipo I (issue #14) e do poder (issue #15)."""
 
 from __future__ import annotations
 
@@ -13,14 +13,17 @@ from src.config import ALPHA, N_SIMULACOES, make_rng
 from src.monte_carlo import (
     REALISTA,
     SAIDA_Q1,
+    SAIDA_Q2,
     Proporcao,
     erro_tipo_i,
     gerar_conjuntos,
     margem_esperada,
     p_valores,
+    poder,
     simular,
     tabela_rejeicoes,
 )
+from src.parametros import GRADE_DELTA_MU_SUGERIDA
 from src.simulacao import gerar_grupos
 from src.testes_estatisticos import aplicar_mann_whitney, aplicar_welch
 
@@ -113,4 +116,47 @@ def test_q1_usa_10_mil_repeticoes_e_o_csv_esta_em_dia() -> None:
     salvo = pd.read_csv(SAIDA_Q1)
     pd.testing.assert_frame_equal(
         salvo, tabela.round(6), check_dtype=False, check_exact=False, atol=1e-6
+    )
+
+
+@pytest.fixture(scope="module")
+def tabela_q2() -> pd.DataFrame:
+    return poder()
+
+
+def test_q2_tem_ao_menos_5_efeitos_comecando_em_zero(tabela_q2: pd.DataFrame) -> None:
+    efeitos = sorted(tabela_q2["delta_mu"].unique())
+    assert efeitos == sorted(GRADE_DELTA_MU_SUGERIDA)
+    assert len(efeitos) >= 5
+    assert efeitos[0] == 0
+    assert len(tabela_q2) == 2 * len(efeitos)
+    assert (tabela_q2["situacao"] == REALISTA.chave).all()
+    assert (tabela_q2["repeticoes"] == N_SIMULACOES).all()
+
+
+def test_q2_com_delta_zero_e_o_proprio_erro_tipo_i(tabela_q2: pd.DataFrame) -> None:
+    zero = tabela_q2[tabela_q2["delta_mu"] == 0].reset_index(drop=True)
+    pd.testing.assert_frame_equal(zero, erro_tipo_i())
+
+
+def test_poder_cresce_com_o_efeito() -> None:
+    tabela = poder(grade=(0.0, 0.5, 1.0, 2.0), repeticoes=2_000)
+    for teste in ("welch", "mann_whitney"):
+        taxas = tabela[tabela["teste"] == teste].sort_values("delta_mu")["taxa"]
+        assert taxas.is_monotonic_increasing
+
+
+def test_poder_aceita_varias_situacoes() -> None:
+    log = replace(REALISTA, chave="log", escala_log=True)
+    tabela = poder((REALISTA, log), grade=(0.0, 1.0), repeticoes=200)
+    assert list(tabela["situacao"].unique()) == ["realista", "log"]
+    assert len(tabela) == 2 * 2 * 2
+
+
+def test_q2_csv_esta_em_dia(tabela_q2: pd.DataFrame) -> None:
+    """Se falhar, rode `python -m src.monte_carlo` para regenerar o CSV."""
+    salvo = pd.read_csv(SAIDA_Q2)
+    assert list(salvo.columns) == list(pd.read_csv(SAIDA_Q1).columns)
+    pd.testing.assert_frame_equal(
+        salvo, tabela_q2.round(6), check_dtype=False, check_exact=False, atol=1e-6
     )
