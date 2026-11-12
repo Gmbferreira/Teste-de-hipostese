@@ -67,7 +67,7 @@ from src.textos import (  # noqa: E402
 
 REPOSITORIO_URL = "https://github.com/Gmbferreira/Teste-de-hipostese"
 PROJECTS_URL = "https://github.com/users/Gmbferreira/projects/4"
-DASHBOARD_URL: str | None = None  # preencher quando o dashboard for publicado
+DASHBOARD_URL: str | None = "https://teste-de-hipostese-gmbf.streamlit.app/"  # Streamlit Community Cloud (issue #24)
 
 st.set_page_config(
     page_title="Bot de revisão × tempo até o merge",

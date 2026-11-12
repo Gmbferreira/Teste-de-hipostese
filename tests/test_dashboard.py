@@ -147,6 +147,15 @@ def test_secao_7_mostra_a_conclusao_com_alpha_de_5_por_cento() -> None:
     assert texto_balanco(poder, poder_por_n) in [m.value for m in app.markdown]
 
 
+def test_texto_do_g2_tem_de_2_a_4_frases() -> None:
+    """Revisão final (issue #24): o texto do G2 fica no app; os outros, em tests/test_revisao_final.py."""
+    from tests.test_revisao_final import frases
+
+    app = _rodar()
+    texto = next(m.value for m in app.markdown if m.value.startswith("O **t de Welch** compara"))
+    assert 2 <= frases(texto) <= 4
+
+
 def test_topo_tem_abertura_links_numeros_e_navegacao() -> None:
     """Visual de apresentação (issue #26): links no topo, números e índice lateral."""
     app = _rodar()
@@ -154,9 +163,11 @@ def test_topo_tem_abertura_links_numeros_e_navegacao() -> None:
     textos = " ".join(m.value for m in app.markdown)
     assert "O bot de revisão muda o tempo até o merge?" in textos
     assert "O estudo em números" in textos
-    # O enunciado pede os links do repositório e do GitHub Projects no topo.
+    # O enunciado pede os links do dashboard, do repositório e do GitHub Projects no topo.
+    assert "https://teste-de-hipostese-gmbf.streamlit.app/" in textos
     assert "https://github.com/Gmbferreira/Teste-de-hipostese" in textos
     assert "https://github.com/users/Gmbferreira/projects/4" in textos
+    assert "em breve" not in textos
     lateral = " ".join(m.value for m in app.sidebar.markdown)
     for numero in range(1, 8):
         assert f'href="#secao-{numero}"' in lateral

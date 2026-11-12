@@ -4,6 +4,10 @@ Laboratório 04 da disciplina **Laboratório de Experimentação de Software**.
 O projeto compara dois testes estatísticos que respondem à mesma pergunta,
 usando dados reais e dados simulados.
 
+**Dashboard publicado:** <https://teste-de-hipostese-gmbf.streamlit.app/>
+(na primeira abertura depois de um tempo parado, o app roda as simulações e
+leva perto de um minuto; abra o link alguns minutos antes da apresentação).
+
 ## Cenário
 
 **Pergunta:** a revisão feita por um bot muda o tempo que um pull request leva
@@ -166,7 +170,7 @@ Os módulos devem criar o gerador com `make_rng()` em vez de chamar
 
 - Repositório: <https://github.com/Gmbferreira/Teste-de-hipostese>
 - GitHub Projects: <https://github.com/users/Gmbferreira/projects/4>
-- Dashboard publicado: _a preencher_
+- Dashboard publicado: <https://teste-de-hipostese-gmbf.streamlit.app/>
 
 ## Andamento
 
@@ -199,6 +203,6 @@ Entrega final:
 
 - [x] #22 — Testes nos dados reais (seção 6)
 - [x] #23 — Conclusão (seção 7)
-- [ ] #24 — Publicação do dashboard
+- [x] #24 — Publicação do dashboard
 - [ ] #25 — Apresentação oral
 - [x] #26 — Visual do dashboard para a apresentação
