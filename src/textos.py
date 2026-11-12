@@ -1,7 +1,7 @@
-"""Textos curtos do dashboard (issues #7 e #19).
+"""Textos curtos do dashboard (issues #7, #19 e #21).
 
 As seções 1 e 2 usam ``texto_cenario`` e ``texto_dados``; a seção 4 usa
-``texto_erro_tipo_i``. Os textos são montados a partir dos resultados, para
+``texto_erro_tipo_i`` e a seção 5 usa ``texto_poder``. Os textos são montados a partir dos resultados, para
 continuarem certos quando o α muda no dashboard. Um teste fica "perto de α"
 quando a taxa cai dentro da variação esperada só pelo acaso com 10.000
 repetições, o critério registrado em docs/expectativa.md. Para não chamar de
@@ -229,4 +229,139 @@ def texto_erro_tipo_i(tabela: pd.DataFrame) -> str:
                 )
         frases.append(_maiuscula(f"{_juntar(partes)}."))
 
+    return " ".join(frases)
+
+
+# ---------------------------------------------------------------------------
+# Seção 5: poder (issue #21)
+# ---------------------------------------------------------------------------
+# Diferença de poder abaixo da qual os dois testes são tratados como empatados
+# (meio ponto percentual, perto do erro-padrão de uma taxa de 10.000 repetições).
+EMPATE_PODER = 0.005
+
+NOMES_TESTE = {"welch": "t de Welch", "mann_whitney": "Mann-Whitney"}
+
+
+def efeito_mais_perto_do_observado(tabela: pd.DataFrame) -> float:
+    """O δ da grade mais perto do efeito observado nos dados reais."""
+    efeitos = np.array(sorted(tabela.loc[tabela["delta_mu"] > 0, "delta_mu"].unique()))
+    return float(efeitos[np.argmin(np.abs(efeitos - DELTA_MU_OBSERVADO))])
+
+
+def _curvas(tabela: pd.DataFrame, chave: str) -> pd.DataFrame:
+    """Poder dos dois testes por efeito numa situação (colunas welch e mann_whitney)."""
+    do_caso = tabela[tabela["situacao"] == chave]
+    return do_caso.pivot(index="delta_mu", columns="teste", values="taxa").sort_index()
+
+
+def _quem_lidera(curvas: pd.DataFrame, liberal: bool) -> pd.Series:
+    """Para cada δ > 0: o teste com mais poder, ou None se empatarem.
+
+    Quando o Welch já rejeita H₀ demais sem efeito (`liberal`), a vantagem dele não
+    é poder de verdade e não conta.
+    """
+    lider = {}
+    for delta, linha in curvas[curvas.index > 0].iterrows():
+        diferenca = linha["welch"] - linha["mann_whitney"]
+        if abs(diferenca) < EMPATE_PODER or (diferenca > 0 and liberal):
+            lider[delta] = None
+        else:
+            lider[delta] = "welch" if diferenca > 0 else "mann_whitney"
+    return pd.Series(lider, dtype=object)
+
+
+def _welch_inflado(tabela: pd.DataFrame, chave: str, alpha: float, margem: float) -> bool:
+    """O Welch já rejeita H₀ demais sem efeito: liberal e acima do Mann-Whitney."""
+    zero = tabela[(tabela["situacao"] == chave) & (tabela["delta_mu"] == 0)].set_index("teste")
+    if not {"welch", "mann_whitney"} <= set(zero.index):
+        return False
+    welch = zero.loc["welch"]
+    ic95 = (welch["ic95_inferior"], welch["ic95_superior"])
+    acima_do_mw = welch["taxa"] - zero.loc["mann_whitney", "taxa"] > EMPATE_PODER
+    return acima_do_mw and classificar(welch["taxa"], ic95, alpha, margem) == LIBERAL
+
+
+def _onde_o_outro_lidera(lideres: pd.Series, outro: str) -> str | None:
+    """Em que efeitos o `outro` teste fica na frente (None se em nenhum); empates não contam."""
+    definidos = lideres.dropna()
+    na_frente = [d for d, teste in definidos.items() if teste == outro]
+    if not na_frente:
+        return None
+    if len(na_frente) == len(definidos):
+        return "em todos os efeitos"
+    if na_frente == [d for d in definidos.index if d >= na_frente[0]]:
+        return f"a partir de δ = {numero(na_frente[0])}"
+    if na_frente == [d for d in definidos.index if d <= na_frente[-1]]:
+        return f"até δ = {numero(na_frente[-1])}"
+    return "em parte dos efeitos"
+
+
+def texto_poder(tabela: pd.DataFrame) -> str:
+    """Texto do G4 (2 a 4 frases): qual teste tem mais poder e onde a vantagem muda de lado.
+
+    A tabela é a de `dados_g4`: uma linha por situação, efeito e teste.
+    """
+    alpha = float(tabela["alpha"].iloc[0])
+    margem = margem_esperada(alpha, int(tabela["repeticoes"].iloc[0]))
+    delta = efeito_mais_perto_do_observado(tabela)
+    chaves = list(dict.fromkeys(tabela["situacao"]))
+    referencia = "realista" if "realista" in chaves else chaves[0]
+
+    curvas_ref = _curvas(tabela, referencia)
+    no_efeito = curvas_ref.loc[delta]
+    lider = "mann_whitney" if no_efeito["mann_whitney"] >= no_efeito["welch"] else "welch"
+    outro = "welch" if lider == "mann_whitney" else "mann_whitney"
+    lideres_ref = _quem_lidera(curvas_ref, _welch_inflado(tabela, referencia, alpha, margem))
+    em_todos = (lideres_ref.dropna() == lider).all()
+
+    perto = f" (δ = {numero(delta)}, perto do efeito observado)"
+    frases = [
+        f"{_maiuscula(NA_FRASE.get(referencia, referencia))}, o **{NOMES_TESTE[lider]}** "
+        f"detecta o efeito com mais frequência que o **{NOMES_TESTE[outro]}** "
+        f"{'em todos os tamanhos de efeito' if em_todos else 'na maior parte dos efeitos'}: "
+        f"com PRs {numero(np.exp(delta), 1)} vezes mais lentos{perto}, ele rejeita H₀ em "
+        f"{porcentagem(no_efeito[lider], 1)} dos conjuntos, contra "
+        f"{porcentagem(no_efeito[outro], 1)} do {NOMES_TESTE[outro].split()[-1]}."
+    ]
+
+    mantem, inflados, mudam = [], [], []
+    nome_outro = NOMES_TESTE[outro].split()[-1]
+    for chave in chaves:
+        if chave == referencia:
+            continue
+        curvas = _curvas(tabela, chave)
+        inflado = _welch_inflado(tabela, chave, alpha, margem)
+        onde = _onde_o_outro_lidera(_quem_lidera(curvas, inflado), outro)
+        if onde is None:
+            welch = curvas["welch"]
+            caiu = (welch[welch.index > 0] < welch.iloc[0]).any()
+            (inflados if inflado and caiu else mantem).append(NA_FRASE.get(chave, chave))
+        elif onde == "em todos os efeitos":
+            diferenca = curvas[outro] - curvas[lider]
+            maior = 100 * float(diferenca[diferenca.index > 0].max())
+            unidade = "pontos percentuais" if round(maior, 1) >= 2 else "ponto percentual"
+            mudam.append(
+                f"{NA_FRASE.get(chave, chave)}, onde o {nome_outro} fica até "
+                f"{numero(maior, 1)} {unidade} à frente"
+            )
+        else:
+            mudam.append(
+                f"{NA_FRASE.get(chave, chave)}, onde o {nome_outro} passa na frente {onde}"
+            )
+
+    if mantem or inflados:
+        frase = "A vantagem se mantém " + _juntar(mantem) if mantem else "A vantagem se mantém"
+        if inflados:
+            frase += (
+                (", e também " if mantem else " ")
+                + _juntar(inflados)
+                + ", onde o Welch rejeita H₀ demais sem efeito e chega a rejeitar menos "
+                "com efeito do que sem"
+            )
+        frases.append(frase + ".")
+    if mudam:
+        # Cada item já tem vírgula dentro, então os itens são separados por ", e ".
+        frases.append(f"Ela só muda de lado {', e '.join(mudam)}.")
+    else:
+        frases.append("Em nenhuma situação a vantagem muda de lado.")
     return " ".join(frases)

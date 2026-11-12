@@ -193,7 +193,7 @@ Sprint 2:
 - [x] #18 — Gráfico G3
 - [x] #19 — Integração do G3 no dashboard
 - [x] #20 — Gráfico G4
-- [ ] #21 — Integração do G4 no dashboard
+- [x] #21 — Integração do G4 no dashboard
 
 Entrega final:
 

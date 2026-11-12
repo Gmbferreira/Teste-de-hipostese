@@ -1,4 +1,4 @@
-"""Roda o dashboard sem navegador e confere as seções 1, 2, 3, 4 e 6 (issues #7, #13, #19 e #22)."""
+"""Roda o dashboard sem navegador e confere as seções 1 a 6 (issues #7, #13, #19, #21 e #22)."""
 
 from __future__ import annotations
 
@@ -87,6 +87,26 @@ def test_secao_4_mostra_o_erro_tipo_i_e_troca_o_alpha() -> None:
     assert not app.exception
     textos = [m.value for m in app.markdown]
     assert texto_erro_tipo_i(dados_g3(alpha=0.01)) in textos
+
+
+def test_secao_5_mostra_o_poder_e_troca_o_alpha() -> None:
+    """Seção 5 (issue #21): texto, G4, tabela no efeito observado e o seletor de α."""
+    from src.grafico_g4 import dados_g4
+    from src.textos import texto_poder
+
+    app = _rodar()
+    assert not app.exception
+    textos = [m.value for m in app.markdown]
+    assert texto_poder(dados_g4(alpha=0.05)) in textos
+    alts = [imagem.alt for elemento in app.get("image") for imagem in elemento.proto.imgs]
+    assert any(alt.startswith("G4") for alt in alts)
+    assert any("Diferença (Mann-Whitney − Welch)" in tabela.value.columns for tabela in app.table)
+    assert not any("gráfico G4" in info.value for info in app.info)
+
+    app.radio(key="alpha_poder").set_value(0.01).run()
+    assert not app.exception
+    textos = [m.value for m in app.markdown]
+    assert texto_poder(dados_g4(alpha=0.01)) in textos
 
 
 def test_secao_6_mostra_os_testes_nos_dados_reais() -> None:

@@ -43,10 +43,21 @@ from src.formatacao import numero, p_valor, porcentagem  # noqa: E402
 from src.grafico_g1 import grafico_g1  # noqa: E402
 from src.grafico_g2 import estatisticas_sob_h0, grafico_g2  # noqa: E402
 from src.grafico_g3 import grafico_g3  # noqa: E402
+from src.grafico_g4 import grafico_g4  # noqa: E402
 from src.monte_carlo import simular, tabela_rejeicoes  # noqa: E402
-from src.parametros import DELTA_MU_OBSERVADO, RAZAO_GEOMETRICA_OBSERVADA  # noqa: E402
+from src.parametros import (  # noqa: E402
+    DELTA_MU_OBSERVADO,
+    GRADE_DELTA_MU_SUGERIDA,
+    RAZAO_GEOMETRICA_OBSERVADA,
+)
 from src.situacoes import POR_CHAVE, TODAS_AS_SITUACOES  # noqa: E402
-from src.textos import texto_cenario, texto_dados, texto_erro_tipo_i  # noqa: E402
+from src.textos import (  # noqa: E402
+    efeito_mais_perto_do_observado,
+    texto_cenario,
+    texto_dados,
+    texto_erro_tipo_i,
+    texto_poder,
+)
 
 REPOSITORIO_URL = "https://github.com/Gmbferreira/Teste-de-hipostese"
 PROJECTS_URL = "https://github.com/users/Gmbferreira/projects/4"
@@ -85,10 +96,24 @@ def estatisticas_do_g2():
     return estatisticas_sob_h0()
 
 
-@st.cache_resource(show_spinner="Rodando 10.000 conjuntos com H₀ verdadeira em cada situação...")
+@st.cache_resource(
+    show_spinner="Rodando 10.000 conjuntos por situação e tamanho de efeito (leva alguns segundos)..."
+)
+def simulacoes_de_poder():
+    """P-valores dos dois testes em cada situação e efeito da grade (Q1, Q2 e Q3).
+
+    Rodam uma vez só; trocar o α no dashboard só reconta as rejeições.
+    """
+    return [
+        simular(situacao, delta)
+        for situacao in TODAS_AS_SITUACOES
+        for delta in GRADE_DELTA_MU_SUGERIDA
+    ]
+
+
 def simulacoes_com_h0():
-    """P-valores dos dois testes com δ = 0 na situação realista (Q1) e nas de Q3."""
-    return [simular(situacao, 0.0) for situacao in TODAS_AS_SITUACOES]
+    """Só as simulações com δ = 0: situação realista (Q1) e as de Q3, para o G3."""
+    return [sim for sim in simulacoes_de_poder() if sim.delta_mu == 0]
 
 
 def texto_como_os_testes_funcionam(exemplo) -> str:
@@ -144,6 +169,25 @@ def tabela_erro_tipo_i_para_exibir(tabela):
                 f"({porcentagem(r.ic95_inferior, 2)} a {porcentagem(r.ic95_superior, 2)})"
             )
         linhas.append(linha)
+    return linhas
+
+
+def tabela_poder_para_exibir(tabela, delta: float):
+    """Uma linha por situação, com o poder de cada teste no efeito `delta`."""
+    no_efeito = tabela[tabela["delta_mu"] == delta]
+    linhas = []
+    for chave, grupo in no_efeito.groupby("situacao", sort=False):
+        taxa = grupo.set_index("teste")["taxa"]
+        linhas.append(
+            {
+                "Situação": POR_CHAVE[chave].nome,
+                "t de Welch": porcentagem(taxa["welch"], 1),
+                "Mann-Whitney": porcentagem(taxa["mann_whitney"], 1),
+                "Diferença (Mann-Whitney − Welch)": (
+                    f"{numero(100 * (taxa['mann_whitney'] - taxa['welch']), 1)} p.p."
+                ),
+            }
+        )
     return linhas
 
 
@@ -331,11 +375,38 @@ with secao(SECOES[3]):
         )
 
 # ---------------------------------------------------------------------------
-# 5. Poder
+# 5. Poder (issues #15, #20 e #21)
 # ---------------------------------------------------------------------------
 with secao(SECOES[4]):
-    st.info(
-        "Em construção — Sprint 02: simulações de Q2 e Q3 e gráfico G4."
+    alpha_g4 = st.radio(
+        "Nível de significância (α)",
+        options=[0.05, 0.01],
+        format_func=lambda a: porcentagem(a, 0),
+        horizontal=True,
+        key="alpha_poder",
+        help="Com 1% fica mais difícil rejeitar H₀; compare as duas opções no G4.",
+    )
+    tabela_g4 = tabela_rejeicoes(simulacoes_de_poder(), alpha_g4)
+    st.markdown(texto_poder(tabela_g4))
+    st.pyplot(
+        grafico_g4(tabela_g4),
+        alt=(
+            "G4: curvas de poder do t de Welch e do Mann-Whitney por tamanho do efeito, "
+            "um painel por situação simulada, com linhas em α, em 80% e no efeito observado."
+        ),
+    )
+    delta_tabela = efeito_mais_perto_do_observado(tabela_g4)
+    st.markdown(
+        f"**Poder com α = {porcentagem(alpha_g4, 0)} e δ = {numero(delta_tabela)}** "
+        f"(PRs com bot {numero(math.exp(delta_tabela), 1)} vezes mais lentos, o ponto da "
+        f"grade mais perto do efeito observado, δ = {numero(DELTA_MU_OBSERVADO)})"
+    )
+    st.table(
+        pd.DataFrame(tabela_poder_para_exibir(tabela_g4, delta_tabela)).set_index("Situação")
+    )
+    st.caption(
+        "Poder: % dos 10.000 conjuntos simulados com efeito em que o teste rejeitou H₀. "
+        "Cada valor tem intervalo de 95% de no máximo ±1 ponto percentual."
     )
 
 # ---------------------------------------------------------------------------
