@@ -1,4 +1,4 @@
-"""Roda o dashboard sem navegador e confere as seções 1 a 6 (issues #7, #13, #19, #21 e #22)."""
+"""Roda o dashboard sem navegador e confere as 7 seções (issues #7, #13, #19, #21, #22 e #23)."""
 
 from __future__ import annotations
 
@@ -124,6 +124,27 @@ def test_secao_6_mostra_os_testes_nos_dados_reais() -> None:
     assert texto_dados_reais(analisar()) in textos
     assert texto_tamanho_amostra(carregar_poder_por_tamanho(), analisar()) in textos
     assert len(app.table) + len(app.dataframe) >= 3
+
+
+def test_secao_7_mostra_a_conclusao_com_alpha_de_5_por_cento() -> None:
+    """Seção 7 (issue #23): balanço, esperado × encontrado, recomendação e limitação."""
+    from src.conclusao import texto_balanco, texto_limitacao, texto_recomendacao
+    from src.dados_reais import analisar, carregar_poder_por_tamanho
+    from src.grafico_g4 import dados_g4
+
+    app = _rodar()
+    assert not app.exception
+    poder, poder_por_n = dados_g4(alpha=0.05), carregar_poder_por_tamanho()
+    textos = [m.value for m in app.markdown]
+    assert texto_balanco(poder, poder_por_n) in textos
+    assert texto_recomendacao(poder, poder_por_n, analisar()) in textos
+    assert texto_limitacao(poder_por_n) in textos
+    assert any("O que esperávamos" in tabela.value.columns for tabela in app.table)
+    assert not app.info  # nenhuma seção ficou "Em construção"
+
+    # Trocar o α das seções 4 e 5 não muda a conclusão, que usa o α da expectativa.
+    app.radio(key="alpha_poder").set_value(0.01).run()
+    assert texto_balanco(poder, poder_por_n) in [m.value for m in app.markdown]
 
 
 def test_topo_tem_abertura_links_numeros_e_navegacao() -> None:

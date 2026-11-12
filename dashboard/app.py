@@ -28,6 +28,12 @@ from dashboard.layout import (  # noqa: E402
     rodape,
     secao,
 )
+from src.conclusao import (  # noqa: E402
+    tabela_esperado_encontrado,
+    texto_balanco,
+    texto_limitacao,
+    texto_recomendacao,
+)
 from src.config import ALPHA, N_SIMULACOES, SEED  # noqa: E402
 from src.dados_reais import (  # noqa: E402
     DADOS,
@@ -435,13 +441,23 @@ with secao(SECOES[5]):
     )
 
 # ---------------------------------------------------------------------------
-# 7. Conclusão
+# 7. Conclusão (issue #23)
 # ---------------------------------------------------------------------------
 with secao(SECOES[6]):
-    st.info(
-        "Em construção — Sprint 02: expectativa registrada na #10 × resultados "
-        "encontrados, com a recomendação final."
+    # Sempre com α = 5%, o α da expectativa, mesmo que as seções 4 e 5 estejam em 1%.
+    tabela_conclusao = tabela_rejeicoes(simulacoes_de_poder(), ALPHA)
+    st.markdown(texto_balanco(tabela_conclusao, poder_por_n))
+    st.markdown(
+        f"**O que esperávamos × o que encontramos** (α = {porcentagem(ALPHA, 0)}, "
+        f"{numero(N_SIMULACOES, 0)} repetições por ponto)"
     )
+    st.table(tabela_esperado_encontrado(tabela_conclusao, poder_por_n).set_index(""))
+    st.caption(
+        "Cada linha é uma previsão de docs/expectativa.md, commitada antes das simulações. "
+        "O resultado é decidido por uma regra em src/conclusao.py a partir dos números."
+    )
+    st.markdown(texto_recomendacao(tabela_conclusao, poder_por_n, resultado_real))
+    st.markdown(texto_limitacao(poder_por_n))
 
 rodape(
     f"Laboratório de Experimentação de Software · Engenharia de Software · "
